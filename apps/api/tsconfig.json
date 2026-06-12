@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@aliwei/domain": ["../../packages/domain/src"],
+      "@aliwei/domain/*": ["../../packages/domain/src/*"],
+      "@aliwei/db": ["../../packages/db/src"],
+      "@aliwei/db/*": ["../../packages/db/src/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}

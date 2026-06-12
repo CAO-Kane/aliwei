@@ -1,0 +1,122 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.pnpm-store/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+.turbo/
+
+# Workspace build outputs (apps/* and packages/*)
+apps/*/.next/
+apps/*/out/
+apps/*/build/
+apps/*/dist/
+packages/*/build/
+packages/*/dist/
+
+# Environment files
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing & coverage
+coverage/
+.nyc_output/
+*.lcov
+playwright-report/
+test-results/
+.vitest-cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editor / IDE
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+.aider*
+.claude/
+
+# Secrets & certs
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+
+# SQLite (local.db used by Drizzle)
+*.db
+*.db-shm
+*.db-wal
+local.db
+local.db-shm
+local.db-wal
+
+# Drizzle / ORM
+drizzle/.snapshot/
+drizzle/meta/_journal.json.bak
+
+# Next.js specific
+.next/cache/
+.swc/
+next-env.d.ts.bak
+
+# Vercel
+.vercel
+
+# Turbo
+.turbo/
+
+# Uploaded / temporary files
+uploads/
+tmp/
+temp/
+*.tmp
+.cache/
+
+# TypeScript
+*.tsbuildinfo
+.tsbuild/
+tsconfig.tsbuildinfo
+
+
+# AI 
+superpowers
+CLAUDE.md
+.claude
+
