@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -6,6 +7,7 @@ import { guestIdMiddleware } from "@/middleware/guest-id";
 import chat from "@/routes/chat";
 import threads from "@/routes/threads";
 import parsePdf from "@/routes/parse-pdf";
+
 
 const app = new Hono();
 
