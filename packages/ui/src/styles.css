@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "tw-shimmer";
 
+@source "./";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
