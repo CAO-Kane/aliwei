@@ -124,7 +124,7 @@ function ChatView({ threadId, initialMessages, activeTool, onMessagesChanged }: 
     <AssistantRuntimeProvider runtime={runtime}>
       <InstructionsInjector systemPrompt={activeTool?.systemPrompt ?? ""} />
       <ThreadCompletionDetector onComplete={stableOnMessagesChanged} />
-      <Thread components={{ Welcome: ToolWelcome }} />
+      <Thread components={{ Welcome: ToolWelcome, ComposerFooter: ToolButtons }} />
       <AskUserToolUI />
     </AssistantRuntimeProvider>
   );
