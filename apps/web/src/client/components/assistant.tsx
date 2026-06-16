@@ -44,18 +44,22 @@ const ToolWelcome: FC = () => {
 
   if (!activeTool) {
     return (
-      <div className="flex flex-col items-center gap-2 text-center px-4">
-        <h1 className="text-2xl font-semibold">阿里职场 AI 助手</h1>
-        <p className="text-sm text-muted-foreground">周报、OKR、复盘、黑话翻译 — 一个对话搞定</p>
+      <div className="flex flex-col items-center gap-2 px-4 text-center">
+        <h1 className="text-3xl font-semibold tracking-normal">
+          阿里职场 AI 助手
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          周报、OKR、复盘、黑话翻译，一个对话搞定
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 text-center px-4 max-w-xl">
+    <div className="flex max-w-xl flex-col items-center gap-3 px-4 text-center">
       <div className="text-4xl">{activeTool.icon}</div>
       <h2 className="text-xl font-semibold">{activeTool.label}</h2>
-      <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+      <p className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed">
         {activeTool.starter}
       </p>
     </div>
@@ -66,17 +70,18 @@ function ToolButtons() {
   const { activeTool, newThread } = useContext(ThreadContext);
 
   return (
-    <div className="grid grid-cols-2 gap-2 w-full max-w-md mx-auto">
+    <div className="mx-auto grid w-full max-w-[44rem] grid-cols-2 gap-2 px-1 sm:grid-cols-4">
       {TOOLS.map((tool) => (
         <button
           key={tool.id}
+          type="button"
           onClick={() => newThread(tool)}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-3",
-            "text-sm font-medium text-left transition-colors",
+            "flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2.5",
+            "text-center text-sm font-medium transition-colors",
             activeTool?.id === tool.id
               ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground",
+              : "border-border/70 bg-card/70 text-card-foreground hover:bg-accent hover:text-accent-foreground",
           )}
         >
           <span className="text-lg">{tool.icon}</span>
@@ -198,10 +203,6 @@ export const Assistant: FC = () => {
               <span className="text-sm font-medium text-muted-foreground">阿里职场 AI 助手</span>
             </header>
             <div className="flex flex-col h-[calc(100dvh-3.5rem)]">
-              <div className="flex flex-col items-center gap-4 pt-10 pb-4 px-4 shrink-0">
-                <ToolButtons />
-              </div>
-              <Separator />
               <div className="flex-1 overflow-hidden">
                 <ChatView
                   key={thread.id}
