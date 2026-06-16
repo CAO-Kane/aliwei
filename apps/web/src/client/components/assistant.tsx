@@ -5,32 +5,20 @@ import {
   useAssistantInstructions,
   useAuiState,
 } from "@assistant-ui/react";
-import {
-  AssistantChatTransport,
-  useChatRuntime,
-} from "@assistant-ui/react-ai-sdk";
+import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai";
 import { Thread } from "@aliwei/ui/assistant-ui/thread";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@aliwei/ui/primitives/sidebar";
+import { AskUserToolUI } from "@aliwei/ui/assistant-ui/ask-user-tool";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@aliwei/ui/primitives/sidebar";
 import { Separator } from "@aliwei/ui/primitives/separator";
 import { cn } from "@aliwei/ui/cn";
 import type { Tool, ThreadMeta } from "@aliwei/domain/types";
 import { TOOLS, findTool } from "@aliwei/domain/tools";
+import { ASK_USER_TOOL } from "@aliwei/domain/prompts";
 import { ThreadContext } from "@/client/contexts/thread-context";
 import { ThreadListSidebar } from "@/client/components/threadlist-sidebar";
 import { apiFetch, apiUrl } from "@/client/lib/api";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type FC,
-} from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type FC } from "react";
 
 function InstructionsInjector({ systemPrompt }: { systemPrompt: string }) {
   useAssistantInstructions(systemPrompt);
@@ -111,19 +99,18 @@ type ChatViewProps = {
   onMessagesChanged: () => void;
 };
 
-function ChatView({
-  threadId,
-  initialMessages,
-  activeTool,
-  onMessagesChanged,
-}: ChatViewProps) {
+function ChatView({ threadId, initialMessages, activeTool, onMessagesChanged }: ChatViewProps) {
   const runtime = useChatRuntime({
     messages: initialMessages,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     transport: new AssistantChatTransport({
       api: apiUrl("/chat"),
       credentials: "include",
-      body: { threadId, toolId: activeTool?.id ?? null },
+      body: {
+        threadId,
+        toolId: activeTool?.id ?? null,
+        tools: ASK_USER_TOOL,
+      },
     }),
   });
 
@@ -137,9 +124,8 @@ function ChatView({
     <AssistantRuntimeProvider runtime={runtime}>
       <InstructionsInjector systemPrompt={activeTool?.systemPrompt ?? ""} />
       <ThreadCompletionDetector onComplete={stableOnMessagesChanged} />
-      <Thread
-        components={{ Welcome: ToolWelcome, ComposerFooter: ToolButtons }}
-      />
+      <Thread components={{ Welcome: ToolWelcome }} />
+      <AskUserToolUI />
     </AssistantRuntimeProvider>
   );
 }
@@ -213,13 +199,8 @@ export const Assistant: FC = () => {
           <SidebarInset>
             <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
               <SidebarTrigger />
-              <Separator
-                orientation="vertical"
-                className="border-border mr-2 h-4"
-              />
-              <span className="text-sm font-medium text-muted-foreground">
-                阿里职场 AI 助手
-              </span>
+              <Separator orientation="vertical" className="border-border mr-2 h-4" />
+              <span className="text-sm font-medium text-muted-foreground">阿里职场 AI 助手</span>
             </header>
             <div className="flex flex-col h-[calc(100dvh-3.5rem)]">
               <div className="flex-1 overflow-hidden">

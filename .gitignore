@@ -118,6 +118,7 @@ tsconfig.tsbuildinfo
 # AI
 superpowers
 CLAUDE.md
+AGENTS.md
 .claude
 
 # Git worktrees

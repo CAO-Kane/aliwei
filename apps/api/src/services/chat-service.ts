@@ -1,17 +1,7 @@
 import { frontendTools } from "@assistant-ui/react-ai-sdk";
-import {
-  convertToModelMessages,
-  streamText,
-  type JSONSchema7,
-  type UIMessage,
-} from "ai";
-import {
-  createThread,
-  getThread,
-  insertMessage,
-  touchThread,
-} from "@aliwei/db";
-import { llmClient, MODEL_NAME } from "./llm-client";
+import { convertToModelMessages, streamText, type JSONSchema7, type UIMessage } from "ai";
+import { createThread, getThread, insertMessage, touchThread } from "@aliwei/db";
+import { getLlmClient, getModelName } from "./llm-client";
 
 type ChatRequest = {
   messages: UIMessage[];
@@ -35,9 +25,7 @@ export async function streamChat(req: ChatRequest) {
   const existingThread = req.threadId ? getThread(req.threadId) : null;
   if (!existingThread) {
     const firstUserMsg = req.messages.find((m) => m.role === "user");
-    const title = firstUserMsg
-      ? extractText(firstUserMsg).slice(0, 20) || "新对话"
-      : "新对话";
+    const title = firstUserMsg ? extractText(firstUserMsg).slice(0, 20) || "新对话" : "新对话";
     createThread({
       id: currentThreadId,
       userId: req.userId,
@@ -46,9 +34,7 @@ export async function streamChat(req: ChatRequest) {
     });
   }
 
-  const lastUserMessage = [...req.messages]
-    .reverse()
-    .find((m) => m.role === "user");
+  const lastUserMessage = [...req.messages].reverse().find((m) => m.role === "user");
   if (lastUserMessage) {
     insertMessage({
       id: lastUserMessage.id,
@@ -61,7 +47,7 @@ export async function streamChat(req: ChatRequest) {
   const result = streamText({
     // .chat() forces /v1/chat/completions; default routes to /v1/responses,
     // which Aliyun/Moark-compatible endpoints do not implement.
-    model: llmClient.chat(MODEL_NAME),
+    model: getLlmClient().chat(getModelName()),
     messages: await convertToModelMessages(req.messages),
     system: req.system,
     tools: {

@@ -7,6 +7,7 @@ export * from "./assistant-ui/shiki-highlighter";
 export * from "./assistant-ui/attachment";
 export * from "./assistant-ui/tool-fallback";
 export * from "./assistant-ui/tool-group";
+export * from "./assistant-ui/ask-user-tool";
 export * from "./assistant-ui/tooltip-icon-button";
 export * from "./primitives/avatar";
 export * from "./primitives/breadcrumb";
