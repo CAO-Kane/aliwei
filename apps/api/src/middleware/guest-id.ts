@@ -1,8 +1,5 @@
 import type { MiddlewareHandler } from "hono";
-import {
-  buildSetCookieHeader,
-  readUserIdFromCookieHeader,
-} from "@/services/guest-id";
+import { buildSetCookieHeader, readUserIdFromCookieHeader } from "@/services/guest-id";
 
 declare module "hono" {
   interface ContextVariableMap {

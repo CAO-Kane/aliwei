@@ -1,8 +1,4 @@
-import {
-  deleteThread as dbDeleteThread,
-  getMessagesByThread,
-  getThreadsByUser,
-} from "@aliwei/db";
+import { deleteThread as dbDeleteThread, getMessagesByThread, getThreadsByUser } from "@aliwei/db";
 
 export function listThreadsForUser(userId: string) {
   return getThreadsByUser(userId);

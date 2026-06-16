@@ -47,9 +47,7 @@ export const ThreadListSidebar: FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               {threads.length === 0 ? (
-                <p className="px-3 py-4 text-xs text-muted-foreground text-center">
-                  暂无对话历史
-                </p>
+                <p className="px-3 py-4 text-xs text-muted-foreground text-center">暂无对话历史</p>
               ) : (
                 threads.map((t) => (
                   <SidebarMenuItem key={t.id}>

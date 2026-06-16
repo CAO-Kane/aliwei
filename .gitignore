@@ -115,8 +115,12 @@ temp/
 tsconfig.tsbuildinfo
 
 
-# AI 
+# AI
 superpowers
 CLAUDE.md
+AGENTS.md
 .claude
+
+# Git worktrees
+.worktrees/
 

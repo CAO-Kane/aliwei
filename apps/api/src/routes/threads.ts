@@ -1,9 +1,5 @@
 import { Hono } from "hono";
-import {
-  listThreadsForUser,
-  loadMessages,
-  removeThread,
-} from "@/services/thread-service";
+import { listThreadsForUser, loadMessages, removeThread } from "@/services/thread-service";
 
 const app = new Hono();
 
