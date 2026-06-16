@@ -11,7 +11,7 @@ import {
   insertMessage,
   touchThread,
 } from "@aliwei/db";
-import { llmClient, MODEL_NAME } from "./llm-client";
+import { getLlmClient, getModelName } from "./llm-client";
 
 type ChatRequest = {
   messages: UIMessage[];
@@ -61,7 +61,7 @@ export async function streamChat(req: ChatRequest) {
   const result = streamText({
     // .chat() forces /v1/chat/completions; default routes to /v1/responses,
     // which Aliyun/Moark-compatible endpoints do not implement.
-    model: llmClient.chat(MODEL_NAME),
+    model: getLlmClient().chat(getModelName()),
     messages: await convertToModelMessages(req.messages),
     system: req.system,
     tools: {

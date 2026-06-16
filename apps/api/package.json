@@ -16,6 +16,7 @@
     "@assistant-ui/react-ai-sdk": "latest",
     "@hono/node-server": "^1.13.7",
     "ai": "^6.0.197",
+    "dotenv": "^17.4.2",
     "hono": "^4.6.14",
     "pdf-parse": "^2.4.5"
   },
