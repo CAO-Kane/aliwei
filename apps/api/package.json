@@ -7,7 +7,9 @@
     "start": "tsx src/index.ts",
     "lint": "oxlint && oxfmt --check",
     "format:fix": "oxlint --fix && oxfmt",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.68",
@@ -15,6 +17,9 @@
     "@aliwei/domain": "workspace:*",
     "@assistant-ui/react-ai-sdk": "latest",
     "@hono/node-server": "^1.13.7",
+    "@langchain/core": "^1.1.49",
+    "@langchain/langgraph": "^1.4.2",
+    "@langchain/openai": "^1.4.7",
     "ai": "^6.0.197",
     "dotenv": "^17.4.2",
     "hono": "^4.6.14",
@@ -23,9 +28,11 @@
   "devDependencies": {
     "@types/node": "^25.9.2",
     "@types/pdf-parse": "^1.1.5",
+    "@vitest/coverage-v8": "^4.1.9",
     "oxfmt": "^0.53.0",
     "oxlint": "^1.68.0",
     "tsx": "^4.19.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
