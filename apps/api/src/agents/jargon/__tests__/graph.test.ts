@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { HumanMessage, AIMessage } from "@langchain/core/messages";
+import { HumanMessage } from "@langchain/core/messages";
 import { FakeListChatModel } from "@langchain/core/utils/testing";
 import { createJargonGraph, jargonStreamChat } from "../graph";
 import { resetCheckpointer } from "../../base/checkpointer";
