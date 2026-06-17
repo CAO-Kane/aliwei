@@ -19,7 +19,7 @@ export function createThread(params: {
   id: string;
   userId: string;
   title: string;
-  toolId?: string | null;
+  agentId?: string | null;
 }) {
   const now = Date.now();
   db.insert(threads)
@@ -27,11 +27,20 @@ export function createThread(params: {
       id: params.id,
       userId: params.userId,
       title: params.title,
-      toolId: params.toolId ?? null,
+      agentId: params.agentId ?? null,
       createdAt: now,
       updatedAt: now,
     })
     .run();
+}
+
+export function updateThread(id: string, fields: { agentId?: string }) {
+  if (fields.agentId !== undefined) {
+    db.update(threads)
+      .set({ agentId: fields.agentId })
+      .where(eq(threads.id, id))
+      .run();
+  }
 }
 
 export function touchThread(id: string) {
