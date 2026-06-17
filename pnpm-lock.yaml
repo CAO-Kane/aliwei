@@ -41,6 +41,9 @@ importers:
       '@langchain/langgraph':
         specifier: ^1.4.2
         version: 1.4.2(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(zod@4.4.3)
+      '@langchain/langgraph-checkpoint-sqlite':
+        specifier: ^1.0.3
+        version: 1.0.3(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3)))(@langchain/langgraph-checkpoint@1.1.1(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3))))
       '@langchain/openai':
         specifier: ^1.4.7
         version: 1.4.7(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3)))
@@ -1048,6 +1051,13 @@ packages:
   '@langchain/core@1.1.49':
     resolution: {integrity: sha512-7wkN3Qv/qZqsY0p3h48CNu6E6y5GMYatYxj+JrX4uVNBiqIVQm1Z528QrmayJWVW9SQTQicqRNoyTCzl+K9F8Q==}
     engines: {node: '>=20'}
+
+  '@langchain/langgraph-checkpoint-sqlite@1.0.3':
+    resolution: {integrity: sha512-odOy8z45HvbWerx4t9g//fA38QNq0Rr6cw8UeHbx1LDOXbarMsfJ5CrmmJs5FlhK16MTlsyaF2m+JJ2cXkTLPg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@langchain/core': ^1.1.44
+      '@langchain/langgraph-checkpoint': ^1.0.0
 
   '@langchain/langgraph-checkpoint@1.1.1':
     resolution: {integrity: sha512-gHqhO6e2dyZ7TTfyaFy25yjcRsavURc9XMGT4q+LUBTc0hT4JxKe3qvrMX2OFTzW8W/0kjV59haHmSRFZIGkvg==}
@@ -4312,6 +4322,12 @@ snapshots:
       - '@opentelemetry/sdk-trace-base'
       - openai
       - ws
+
+  '@langchain/langgraph-checkpoint-sqlite@1.0.3(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3)))(@langchain/langgraph-checkpoint@1.1.1(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3))))':
+    dependencies:
+      '@langchain/core': 1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3))
+      '@langchain/langgraph-checkpoint': 1.1.1(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3)))
+      better-sqlite3: 12.10.0
 
   '@langchain/langgraph-checkpoint@1.1.1(@langchain/core@1.1.49(@opentelemetry/api@1.9.1)(openai@6.43.0(zod@4.4.3)))':
     dependencies:
