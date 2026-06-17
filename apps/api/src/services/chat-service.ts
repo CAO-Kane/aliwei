@@ -6,6 +6,7 @@ import { getLlmClient, getModelName } from "./llm-client";
 import { getChatModel } from "@/agents/base/model";
 import { createJargonGraph, jargonStreamChat } from "@/agents/jargon/graph";
 import { createWeeklyGraph, weeklyStreamChat } from "@/agents/weekly/graph";
+import { createOkrGraph, okrStreamChat } from "@/agents/okr/graph";
 
 type ChatRequest = {
   messages: UIMessage[];
@@ -35,7 +36,7 @@ function extractText(message: UIMessage): string {
 export async function streamChat(req: ChatRequest) {
   const useLanggraph =
     process.env.USE_LANGGRAPH === "true" &&
-    (req.toolId === "jargon" || req.toolId === "weekly");
+    (req.toolId === "jargon" || req.toolId === "weekly" || req.toolId === "okr");
   const currentThreadId = req.threadId ?? crypto.randomUUID();
 
   const existingThread = req.threadId ? getThread(req.threadId) : null;
@@ -70,6 +71,9 @@ export async function streamChat(req: ChatRequest) {
     if (toolId === "weekly") {
       graph = createWeeklyGraph(model);
       streamer = weeklyStreamChat;
+    } else if (toolId === "okr") {
+      graph = createOkrGraph(model);
+      streamer = okrStreamChat;
     } else {
       graph = createJargonGraph(model);
       streamer = jargonStreamChat;
