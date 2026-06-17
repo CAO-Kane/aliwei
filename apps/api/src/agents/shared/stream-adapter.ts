@@ -1,4 +1,7 @@
 import type { CompiledStateGraph } from "@langchain/langgraph";
+import { Command } from "@langchain/langgraph";
+
+export { Command };
 
 export async function streamGraphToUIMessageStream(
   graph: CompiledStateGraph<any, any, any>,
@@ -54,16 +57,31 @@ export async function streamGraphToUIMessageStream(
                 })}\n`,
               ),
             );
+          } else if (event.event === "on_interrupt") {
+            // interrupt() was called inside a tool — pause graph until Command({ resume })
+            controller.enqueue(
+              encoder.encode(
+                `8:${JSON.stringify({ type: "ask_user_pending", interrupts: event.data })}\n`,
+              ),
+            );
           } else if (event.event === "on_chain_end" && event.name === "LangGraph") {
             controller.enqueue(encoder.encode(`e:${JSON.stringify({ finishReason: "stop" })}\n`));
           }
         }
       } catch (err) {
-        controller.enqueue(
-          encoder.encode(
-            `e:${JSON.stringify({ finishReason: "error", error: String(err) })}\n`,
-          ),
-        );
+        const errStr = String(err);
+        // LangGraph interrupt sentinel — graph is paused, not an actual error
+        if (errStr.includes("Interrupt") || errStr.includes("interrupt")) {
+          controller.enqueue(
+            encoder.encode(`8:${JSON.stringify({ type: "ask_user_pending" })}\n`),
+          );
+        } else {
+          controller.enqueue(
+            encoder.encode(
+              `e:${JSON.stringify({ finishReason: "error", error: errStr })}\n`,
+            ),
+          );
+        }
       } finally {
         controller.close();
       }
