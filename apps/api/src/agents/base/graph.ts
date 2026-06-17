@@ -8,7 +8,7 @@ import { getCheckpointer } from "./checkpointer";
 import { askUserTool } from "../shared/tools";
 
 export type CreateBaseGraphOpts<A extends typeof BaseState> = {
-  toolId: string;
+  agentId: string;        // renamed from toolId
   stateAnnotation: A;
   systemPromptFn: (state: A["State"]) => string;
   extraTools?: StructuredToolInterface[];

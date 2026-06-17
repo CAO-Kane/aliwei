@@ -10,7 +10,7 @@ export function createWeeklyGraph(
   model: BaseChatModel,
 ): CompiledStateGraph<any, any, any> {
   return createBaseGraph({
-    toolId: "weekly",
+    agentId: "weekly",
     stateAnnotation: BaseState,
     systemPromptFn: () => buildSystemPrompt(WEEKLY_TOOL_PROMPT),
     model,
@@ -21,7 +21,7 @@ export async function weeklyStreamChat(opts: {
   graph: CompiledStateGraph<any, any, any>;
   userMessage: HumanMessage;
   threadId: string;
-  toolId: string;
+  agentId: string;
   onFinish?: (text: string) => void | Promise<void>;
 }): Promise<Response> {
   return streamGraphToUIMessageStream(
@@ -29,7 +29,7 @@ export async function weeklyStreamChat(opts: {
     {
       messages: [opts.userMessage],
       threadId: opts.threadId,
-      toolId: opts.toolId,
+      agentId: opts.agentId,
     },
     opts.threadId,
     opts.onFinish,

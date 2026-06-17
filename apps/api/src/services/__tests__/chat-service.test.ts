@@ -15,13 +15,13 @@ describe("streamChat", () => {
     resetCheckpointer();
   });
 
-  it("routes toolId=jargon to langgraph and returns a text/event-stream Response", async () => {
+  it("routes agentId=jargon to langgraph and returns a text/event-stream Response", async () => {
     const messages: UIMessage[] = [
       { id: "u1", role: "user", parts: [{ type: "text", text: "banding 是啥?" }] },
     ];
     const res = await streamChat({
       messages,
-      toolId: "jargon",
+      agentId: "jargon",
       threadId: `test-jargon-${Date.now()}`,
       userId: "guest-test",
     });
@@ -31,13 +31,13 @@ describe("streamChat", () => {
     res.body?.cancel();
   });
 
-  it("routes toolId=weekly to langgraph and returns a Response", async () => {
+  it("routes agentId=weekly to langgraph and returns a Response", async () => {
     const messages: UIMessage[] = [
       { id: "u1", role: "user", parts: [{ type: "text", text: "本周做了啥" }] },
     ];
     const res = await streamChat({
       messages,
-      toolId: "weekly",
+      agentId: "weekly",
       threadId: `test-weekly-${Date.now()}`,
       userId: "guest-test",
     });

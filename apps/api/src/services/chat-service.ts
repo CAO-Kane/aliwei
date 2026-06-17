@@ -14,7 +14,7 @@ type ChatRequest = {
   system?: string;
   tools?: Record<string, { description?: string; parameters: unknown }>;
   threadId?: string;
-  toolId?: string;
+  agentId?: string;     // renamed from toolId
   userId: string;
 };
 
@@ -89,7 +89,7 @@ type Streamer = (opts: {
   graph: ReturnType<typeof createJargonGraph>;
   userMessage: HumanMessage;
   threadId: string;
-  toolId: string;
+  agentId: string;
   onFinish?: (text: string) => void | Promise<void>;
 }) => Promise<Response>;
 
@@ -106,18 +106,18 @@ const STREAMERS: Record<string, Streamer> = {
 };
 
 export async function streamChat(req: ChatRequest) {
-  const toolId = req.toolId ?? "jargon";
+  const agentId = req.agentId ?? "jargon";   // Task 6 will change this to "start"
   const currentThreadId = req.threadId ?? crypto.randomUUID();
 
   const existingThread = req.threadId ? getThread(req.threadId) : null;
   if (!existingThread) {
     const firstUserMsg = req.messages.find((m) => m.role === "user");
     const title = firstUserMsg ? extractText(firstUserMsg).slice(0, 20) || "新对话" : "新对话";
-    createThread({ id: currentThreadId, userId: req.userId, title, toolId });
+    createThread({ id: currentThreadId, userId: req.userId, title, agentId });
   }
 
   const model = getChatModel();
-  const graph = (GRAPH_FACTORIES[toolId] ?? createJargonGraph)(model);
+  const graph = (GRAPH_FACTORIES[agentId] ?? createJargonGraph)(model);
 
   const onFinish = async (text: string) => {
     const assistantMessage: UIMessage = {
@@ -158,14 +158,14 @@ export async function streamChat(req: ChatRequest) {
     });
   }
 
-  const streamer: Streamer = STREAMERS[toolId] ?? jargonStreamChat;
+  const streamer: Streamer = STREAMERS[agentId] ?? jargonStreamChat;
   const userMessage = new HumanMessage(lastUserText(req.messages));
 
   const response = await streamer({
     graph,
     userMessage,
     threadId: currentThreadId,
-    toolId,
+    agentId,
     onFinish,
   });
   touchThread(currentThreadId);

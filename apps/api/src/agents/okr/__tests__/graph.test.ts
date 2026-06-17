@@ -21,7 +21,7 @@ describe("okr graph", () => {
     const graph = createOkrGraph(fake as any);
 
     const result = await graph.invoke(
-      { messages: [new HumanMessage("拆解 Q3 营收目标")], threadId: "t-okr-1", toolId: "okr" } as any,
+      { messages: [new HumanMessage("拆解 Q3 营收目标")], threadId: "t-okr-1", agentId: "okr" } as any,
       { configurable: { thread_id: "t-okr-1" } },
     ) as any;
 

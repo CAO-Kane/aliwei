@@ -10,7 +10,7 @@ export function createOkrGraph(
   model: BaseChatModel,
 ): CompiledStateGraph<any, any, any> {
   return createBaseGraph({
-    toolId: "okr",
+    agentId: "okr",
     stateAnnotation: OkrState as any,
     systemPromptFn: () => buildSystemPrompt(OKR_TOOL_PROMPT),
     model,
@@ -21,7 +21,7 @@ export async function okrStreamChat(opts: {
   graph: CompiledStateGraph<any, any, any>;
   userMessage: HumanMessage;
   threadId: string;
-  toolId: string;
+  agentId: string;
   onFinish?: (text: string) => void | Promise<void>;
 }): Promise<Response> {
   return streamGraphToUIMessageStream(
@@ -29,7 +29,7 @@ export async function okrStreamChat(opts: {
     {
       messages: [opts.userMessage],
       threadId: opts.threadId,
-      toolId: opts.toolId,
+      agentId: opts.agentId,
     },
     opts.threadId,
     opts.onFinish,

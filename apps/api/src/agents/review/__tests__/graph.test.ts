@@ -21,7 +21,7 @@ describe("review graph", () => {
     const graph = createReviewGraph(fake as any);
 
     const result = await graph.invoke(
-      { messages: [new HumanMessage("复盘 Q3")], threadId: "t-rev-1", toolId: "review" } as any,
+      { messages: [new HumanMessage("复盘 Q3")], threadId: "t-rev-1", agentId: "review" } as any,
       { configurable: { thread_id: "t-rev-1" } },
     ) as any;
 

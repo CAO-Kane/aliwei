@@ -30,7 +30,7 @@ describe("jargon graph", () => {
       graph: g,
       userMessage: new HumanMessage("banding 是啥?"),
       threadId: "t-jargon-1",
-      toolId: "jargon",
+      agentId: "jargon",
     });
     expect(res).toBeInstanceOf(Response);
     expect(res.headers.get("content-type")).toContain("text/event-stream");

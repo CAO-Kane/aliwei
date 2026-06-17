@@ -10,7 +10,7 @@ export function createJargonGraph(
   model: BaseChatModel,
 ): CompiledStateGraph<any, any, any> {
   return createBaseGraph({
-    toolId: "jargon",
+    agentId: "jargon",
     stateAnnotation: BaseState,
     systemPromptFn: () => buildSystemPrompt(JARGON_TOOL_PROMPT),
     model,
@@ -21,13 +21,13 @@ export async function jargonStreamChat(opts: {
   graph: CompiledStateGraph<any, any, any>;
   userMessage: HumanMessage;
   threadId: string;
-  toolId: string;
+  agentId: string;
   onFinish?: (text: string) => void | Promise<void>;
 }): Promise<Response> {
   const input = {
     messages: [opts.userMessage],
     threadId: opts.threadId,
-    toolId: opts.toolId,
+    agentId: opts.agentId,
   };
   return streamGraphToUIMessageStream(opts.graph, input, opts.threadId, opts.onFinish);
 }
