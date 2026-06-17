@@ -119,6 +119,7 @@ type Streamer = (opts: {
 }) => Promise<Response>;
 
 const GRAPH_FACTORIES: Record<string, (model: ReturnType<typeof getChatModel>) => ReturnType<typeof createJargonGraph>> = {
+  jargon: createJargonGraph,
   weekly: createWeeklyGraph,
   okr: createOkrGraph,
   review: createReviewGraph,
@@ -126,6 +127,7 @@ const GRAPH_FACTORIES: Record<string, (model: ReturnType<typeof getChatModel>) =
 };
 
 const STREAMERS: Record<string, Streamer> = {
+  jargon: jargonStreamChat,
   weekly: weeklyStreamChat,
   okr: okrStreamChat,
   review: reviewStreamChat,
