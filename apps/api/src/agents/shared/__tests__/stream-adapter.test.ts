@@ -312,6 +312,85 @@ describe("streamGraphToUIMessageStream", () => {
     expect(chunks.filter((c) => c.type === "finish-step")).toHaveLength(1);
   });
 
+  it("isResume=true: shows NEW tool calls that fire after the first on_chat_model_start", async () => {
+    // After answering Q1 the LLM may call ask_user again for Q2. The
+    // skipToolEvents flag must flip off at on_chat_model_start so Q2's
+    // tool-input-available is emitted (otherwise the card never appears).
+    const q2Interrupt = new GraphInterrupt([
+      { value: { question: "第二个问题?", options: ["是", "否"] } },
+    ]);
+
+    async function* fakeStreamEvents() {
+      // 1. Replay of Q1 (must be skipped)
+      yield {
+        event: "on_tool_start",
+        data: { input: { question: "第一个问题?", options: ["a", "b"] } },
+        name: "ask_user",
+        run_id: "tool-replay-q1",
+        tags: [],
+        metadata: {},
+      };
+      yield {
+        event: "on_tool_end",
+        data: { output: '{"selected":"a"}' },
+        name: "ask_user",
+        run_id: "tool-replay-q1",
+        tags: [],
+        metadata: {},
+      };
+      // 2. LLM starts its next turn — skipToolEvents flips to false here
+      yield {
+        event: "on_chat_model_start",
+        data: {},
+        name: "ChatModel",
+        run_id: "m-q2",
+        tags: [],
+        metadata: {},
+      };
+      // 3. LLM calls ask_user for Q2 (must NOT be skipped)
+      yield {
+        event: "on_tool_start",
+        data: { input: { question: "第二个问题?", options: ["是", "否"] } },
+        name: "ask_user",
+        run_id: "tool-q2",
+        tags: [],
+        metadata: {},
+      };
+      yield {
+        event: "on_tool_error",
+        data: { error: q2Interrupt },
+        name: "ask_user",
+        run_id: "tool-q2",
+        tags: [],
+        metadata: {},
+      };
+      throw q2Interrupt;
+    }
+
+    const mockGraph = { streamEvents: () => fakeStreamEvents() } as any;
+    const res = await streamGraphToUIMessageStream(
+      mockGraph,
+      {} as any,
+      "t-resume-q2",
+      undefined,
+      { isResume: true },
+    );
+    const chunks = await readChunks(res);
+
+    // Q1 replay must NOT appear
+    const allInputAvail = chunks.filter((c) => c.type === "tool-input-available") as any[];
+    const q1 = allInputAvail.find((c: any) => c.toolCallId === "tool-replay-q1");
+    expect(q1).toBeUndefined();
+
+    // Q2 tool card MUST appear with the interrupt value
+    const q2 = allInputAvail.find((c: any) => c.toolCallId === "tool-q2");
+    expect(q2).toBeDefined();
+    expect(q2.input).toEqual({ question: "第二个问题?", options: ["是", "否"] });
+
+    // No error chunk
+    expect(chunks.some((c) => c.type === "error")).toBe(false);
+  });
+
   it("suppresses re-wrapped error whose message contains the GraphInterrupt stack trace (no red box)", async () => {
     // LangChain's tool machinery sometimes re-wraps the GraphInterrupt into a
     // new Error whose .message is the original error's stack string:

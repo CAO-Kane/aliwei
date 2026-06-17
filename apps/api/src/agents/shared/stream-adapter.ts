@@ -117,10 +117,11 @@ export async function streamGraphToUIMessageStream(
   // user's addResult), so re-emitting tool-input-available would create a
   // duplicate part and re-emitting tool-output-available with the new
   // run_id would not match any existing part. Either way the UI looks
-  // wrong. Solution: in resume mode, skip ALL tool-related writes — the
-  // client already has the right state for that tool. Only the subsequent
-  // LLM step matters.
-  const isResume = options?.isResume === true;
+  // wrong. Solution: skip tool events only during the replay phase
+  // (before the LLM starts its next turn). Once on_chat_model_start fires,
+  // we've entered a new LLM step and any subsequent tool calls are fresh —
+  // they must be shown to the user (e.g. a second ask_user question).
+  let skipToolEvents = options?.isResume === true;
   // Track tool calls that have had tool-input-available written, so we don't
   // double-write or send a final output for an interrupted call.
   const inputSent = new Set<string>();
@@ -142,6 +143,9 @@ export async function streamGraphToUIMessageStream(
             // already consumed by the LLM". Without this, the predicate
             // always returns true after a tool runs and the client loops
             // forever resending POST /chat.
+            // Also marks end of the replay phase: any tool calls the LLM
+            // makes from this point are new and must be surfaced to the client.
+            skipToolEvents = false;
             if (textOpen) {
               writer.write({ type: "text-end", id: textId } as any);
               textOpen = false;
@@ -173,7 +177,7 @@ export async function streamGraphToUIMessageStream(
               }
             }
           } else if (event.event === "on_tool_start") {
-            if (isResume) continue;
+            if (skipToolEvents) continue;
             const id = event.run_id;
             const name = event.name;
             writer.write({
@@ -189,7 +193,7 @@ export async function streamGraphToUIMessageStream(
             } as any);
             inputSent.add(id);
           } else if (event.event === "on_tool_end") {
-            if (isResume) continue;
+            if (skipToolEvents) continue;
             const out = event.data?.output;
             writer.write({
               type: "tool-output-available",
@@ -197,7 +201,7 @@ export async function streamGraphToUIMessageStream(
               output: typeof out === "string" ? out : JSON.stringify(out),
             } as any);
           } else if (event.event === "on_tool_error") {
-            if (isResume) continue;
+            if (skipToolEvents) continue;
             // langgraph's interrupt() surfaces as on_tool_error with a
             // GraphInterrupt payload. Re-emit tool-input-available using the
             // interrupt value so the client renders the question with the
