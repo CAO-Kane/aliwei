@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { FakeListChatModel } from "@langchain/core/utils/testing";
 import { createReviewGraph } from "../graph";
-import { searchPastReviewsTool } from "../tools";
 import { resetCheckpointer } from "../../base/checkpointer";
 import * as fs from "node:fs";
 
@@ -15,13 +14,9 @@ beforeEach(() => {
 });
 
 describe("review graph", () => {
-  it("runs search_past_reviews then final reply", async () => {
-    const ai1 = new AIMessage("");
-    ai1.tool_calls = [
-      { name: "search_past_reviews", args: { keyword: "Q2" }, id: "rev-1", type: "tool_call" },
-    ];
+  it("returns AI reply directly", async () => {
     const fake = new FakeListChatModel({
-      responses: [ai1, new AIMessage("已参考 Q2 复盘")] as any,
+      responses: [new AIMessage("已为你生成复盘建议")] as any,
     });
     const graph = createReviewGraph(fake as any);
 
@@ -30,13 +25,7 @@ describe("review graph", () => {
       { configurable: { thread_id: "t-rev-1" } },
     ) as any;
 
-    expect(result.messages.length).toBe(4);
-    expect((result.messages[1] as AIMessage).tool_calls).toHaveLength(1);
-  });
-
-  it("searchPastReviewsTool returns array", async () => {
-    const result = await searchPastReviewsTool.invoke({ keyword: "Q2" });
-    const parsed = JSON.parse(result as string);
-    expect(Array.isArray(parsed)).toBe(true);
+    expect(result.messages.length).toBe(2);
+    expect((result.messages[1] as AIMessage).content).toBe("已为你生成复盘建议");
   });
 });

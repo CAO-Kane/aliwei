@@ -5,7 +5,6 @@ import { createBaseGraph } from "../base/graph";
 import { OkrState } from "../base/state";
 import { OKR_TOOL_PROMPT, buildSystemPrompt } from "../shared/prompts";
 import { streamGraphToUIMessageStream } from "../shared/stream-adapter";
-import { breakdownOkrTool, searchPastOkrsTool } from "./tools";
 
 export function createOkrGraph(
   model: BaseChatModel,
@@ -14,7 +13,6 @@ export function createOkrGraph(
     toolId: "okr",
     stateAnnotation: OkrState as any,
     systemPromptFn: () => buildSystemPrompt(OKR_TOOL_PROMPT),
-    extraTools: [breakdownOkrTool, searchPastOkrsTool],
     model,
   }) as any;
 }
