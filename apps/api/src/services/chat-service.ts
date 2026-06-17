@@ -1,7 +1,10 @@
 import { frontendTools } from "@assistant-ui/react-ai-sdk";
 import { convertToModelMessages, streamText, type JSONSchema7, type UIMessage } from "ai";
 import { createThread, getThread, insertMessage, touchThread } from "@aliwei/db";
+import { HumanMessage } from "@langchain/core/messages";
 import { getLlmClient, getModelName } from "./llm-client";
+import { getChatModel } from "@/agents/base/model";
+import { createJargonGraph, jargonStreamChat } from "@/agents/jargon/graph";
 
 type ChatRequest = {
   messages: UIMessage[];
@@ -12,6 +15,15 @@ type ChatRequest = {
   userId: string;
 };
 
+function lastUserText(messages: UIMessage[]): string {
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  if (!lastUser) return "";
+  return lastUser.parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => p.text)
+    .join("");
+}
+
 function extractText(message: UIMessage): string {
   return message.parts
     .filter((p): p is { type: "text"; text: string } => p.type === "text")
@@ -20,6 +32,8 @@ function extractText(message: UIMessage): string {
 }
 
 export async function streamChat(req: ChatRequest) {
+  const useLanggraph =
+    process.env.USE_LANGGRAPH === "true" && req.toolId === "jargon";
   const currentThreadId = req.threadId ?? crypto.randomUUID();
 
   const existingThread = req.threadId ? getThread(req.threadId) : null;
@@ -42,6 +56,20 @@ export async function streamChat(req: ChatRequest) {
       role: "user",
       content: JSON.stringify(lastUserMessage),
     });
+  }
+
+  if (useLanggraph) {
+    const text = lastUserText(req.messages);
+    const userMsg = new HumanMessage(text);
+    const graph = createJargonGraph(getChatModel());
+    const response = await jargonStreamChat({
+      graph,
+      userMessage: userMsg,
+      threadId: currentThreadId,
+      toolId: req.toolId!,
+    });
+    touchThread(currentThreadId);
+    return response;
   }
 
   const result = streamText({
