@@ -3,10 +3,11 @@
 import {
   AssistantRuntimeProvider,
   useAssistantInstructions,
+  useAssistantToolUI,
   useAuiState,
 } from "@assistant-ui/react";
 import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-sdk";
-import type { UIMessage } from "ai";
+import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai";
 import { Thread } from "@aliwei/ui/assistant-ui/thread";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@aliwei/ui/primitives/sidebar";
 import { Separator } from "@aliwei/ui/primitives/separator";
@@ -38,50 +39,24 @@ function ThreadCompletionDetector({ onComplete }: { onComplete: () => void }) {
   return null;
 }
 
-function AskUserInterceptor({ threadId, toolId }: { threadId: string; toolId: string }) {
-  const messages = useAuiState((s) => s.thread.messages);
-
-  // Only inspect the last assistant message — historical tool calls are already resolved.
-  let lastAssistant: (typeof messages)[number] | null = null;
-  for (const m of messages) {
-    if (m.role === "assistant") lastAssistant = m;
-  }
-
-  let pending: { question: string; options: string[]; toolCallId: string } | null = null;
-  if (lastAssistant) {
-    for (const part of lastAssistant.content) {
-      if (
-        part.type === "tool-call" &&
-        part.toolName === "ask_user" &&
-        part.result === undefined &&
-        // Require the part to be actively running or awaiting action, not a completed call
-        // whose result hasn't been written back yet.
-        (part as any).status?.type !== "complete"
-      ) {
-        const args = part.args as { question?: string; options?: string[] };
-        if (args.question && Array.isArray(args.options) && args.options.length >= 2) {
-          pending = {
-            question: args.question,
-            options: args.options,
-            toolCallId: part.toolCallId,
-          };
-        }
-      }
-    }
-  }
-
-  if (!pending) return null;
-
-  return (
-    <AskUserCard
-      question={pending.question}
-      options={pending.options}
-      threadId={threadId}
-      toolCallId={pending.toolCallId}
-      toolId={toolId}
-      onSelect={() => {}}
-    />
-  );
+function AskUserToolUIRegistrar() {
+  // useAssistantToolUI is marked deprecated by upstream, but the Thread we
+  // use dispatches tool parts via `part.toolUI` (set by this hook), so it is
+  // still the cleanest way to override the default ToolFallback (Allow/Deny)
+  // for ask_user without forking thread.tsx.
+  //
+  // display: "standalone" routes the part to the synthetic
+  // "standalone-tool-call" group in MessageGroupedParts. thread.tsx maps
+  // that group to "group-standalone-tool", which renders the tool UI
+  // directly (no "Used tool" collapsible wrapper) — exactly what we want
+  // for a question waiting on user input.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  useAssistantToolUI({
+    toolName: "ask_user",
+    render: AskUserCard,
+    display: "standalone",
+  });
+  return null;
 }
 
 const ToolWelcome: FC = () => {
@@ -147,6 +122,7 @@ type ChatViewProps = {
 function ChatView({ threadId, initialMessages, activeTool, onMessagesChanged }: ChatViewProps) {
   const runtime = useChatRuntime({
     messages: initialMessages,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     transport: new AssistantChatTransport({
       api: apiUrl("/chat"),
       credentials: "include",
@@ -167,8 +143,8 @@ function ChatView({ threadId, initialMessages, activeTool, onMessagesChanged }: 
     <AssistantRuntimeProvider runtime={runtime}>
       <InstructionsInjector systemPrompt={activeTool?.systemPrompt ?? ""} />
       <ThreadCompletionDetector onComplete={stableOnMessagesChanged} />
+      <AskUserToolUIRegistrar />
       <Thread components={{ Welcome: ToolWelcome, ComposerFooter: ToolButtons }} />
-      <AskUserInterceptor threadId={threadId} toolId={activeTool?.id ?? ""} />
     </AssistantRuntimeProvider>
   );
 }

@@ -1,41 +1,51 @@
 "use client";
 
-import type { FC } from "react";
-import { apiFetch } from "@/client/lib/api";
+import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
 
-type Props = {
-  question: string;
-  options: string[];
-  threadId: string;
-  toolCallId: string;
-  toolId?: string;
-  onSelect: (selected: string) => void;
-};
+type Args = { question: string; options: string[] };
+type Result = { selected: string };
 
-export const AskUserCard: FC<Props> = ({ question, options, threadId, toolCallId, toolId = "jargon", onSelect }) => {
-  const handle = async (selected: string) => {
-    onSelect(selected);
-    await apiFetch("/chat/continue", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ threadId, toolCallId, answer: selected, toolId }),
-    });
+export const AskUserCard: ToolCallMessagePartComponent<Args, Result> = ({
+  args,
+  result,
+  addResult,
+}) => {
+  const submitted = result !== undefined;
+  const question = args?.question ?? "";
+  const options = Array.isArray(args?.options) ? args.options : [];
+
+  if (!question || options.length === 0) {
+    return null;
+  }
+
+  const handle = (selected: string) => {
+    if (submitted) return;
+    addResult({ selected });
   };
 
   return (
     <div className="my-2 rounded-lg border bg-muted/40 p-3">
       <div className="mb-2 text-sm font-medium">{question}</div>
       <div className="flex flex-wrap gap-2">
-        {options.map((opt) => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => handle(opt)}
-            className="rounded-md border bg-card px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            {opt}
-          </button>
-        ))}
+        {options.map((opt) => {
+          const isSelected = submitted && result?.selected === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => handle(opt)}
+              disabled={submitted}
+              className={
+                "rounded-md border px-3 py-1.5 text-sm transition-colors " +
+                (isSelected
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "bg-card hover:bg-accent disabled:opacity-60 disabled:cursor-not-allowed")
+              }
+            >
+              {opt}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

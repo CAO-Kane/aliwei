@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { resetChatModel } from "@/agents/base/model";
 import { resetCheckpointer } from "@/agents/base/checkpointer";
-import { streamChat, lastUserText } from "../chat-service";
+import { streamChat, lastUserText, detectAskUserResume } from "../chat-service";
 import type { UIMessage } from "ai";
 
 describe("streamChat", () => {
@@ -76,5 +76,152 @@ describe("lastUserText", () => {
       },
     ];
     expect(lastUserText(messages)).toBe("part1 part2");
+  });
+});
+
+describe("detectAskUserResume", () => {
+  it("returns null when last message is from user", () => {
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "hi" }] },
+    ];
+    expect(detectAskUserResume(messages)).toBeNull();
+  });
+
+  it("returns null when no ask_user tool output is present", () => {
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "hi" }] },
+      { id: "a1", role: "assistant", parts: [{ type: "text", text: "hello" }] },
+    ];
+    expect(detectAskUserResume(messages)).toBeNull();
+  });
+
+  it("extracts the selected answer when last assistant part is a completed ask_user", () => {
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "请采访我" }] },
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-ask_user",
+            toolCallId: "tc-1",
+            state: "output-available",
+            input: { question: "?", options: ["a", "b"] },
+            output: { selected: "a" },
+          } as any,
+        ],
+      },
+    ];
+    expect(detectAskUserResume(messages)).toBe("a");
+  });
+
+  it("returns null if the user has already replied after the ask_user", () => {
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "请采访我" }] },
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-ask_user",
+            toolCallId: "tc-1",
+            state: "output-available",
+            input: { question: "?", options: ["a", "b"] },
+            output: { selected: "a" },
+          } as any,
+        ],
+      },
+      { id: "u2", role: "user", parts: [{ type: "text", text: "新问题" }] },
+    ];
+    expect(detectAskUserResume(messages)).toBeNull();
+  });
+
+  it("returns null when the LLM has already consumed the ask_user result (text after)", () => {
+    // After resume, the same assistant message gains a text part. A second
+    // POST should NOT re-trigger resume — that's the infinite-loop bug.
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "请采访我" }] },
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-ask_user",
+            toolCallId: "tc-1",
+            state: "output-available",
+            input: { question: "?", options: ["a", "b"] },
+            output: { selected: "a" },
+          } as any,
+          { type: "text", text: "好的!你选择了 a" } as any,
+        ],
+      },
+    ];
+    expect(detectAskUserResume(messages)).toBeNull();
+  });
+
+  it("returns null when the LLM has already consumed via a follow-up tool call", () => {
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "请采访我" }] },
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-ask_user",
+            toolCallId: "tc-1",
+            state: "output-available",
+            input: { question: "?", options: ["a", "b"] },
+            output: { selected: "a" },
+          } as any,
+          {
+            type: "tool-some_other",
+            toolCallId: "tc-2",
+            state: "input-available",
+            input: {},
+          } as any,
+        ],
+      },
+    ];
+    expect(detectAskUserResume(messages)).toBeNull();
+  });
+
+  it("still returns the answer when ask_user is followed only by step-start markers", () => {
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "请采访我" }] },
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          { type: "step-start" } as any,
+          {
+            type: "tool-ask_user",
+            toolCallId: "tc-1",
+            state: "output-available",
+            input: { question: "?", options: ["a", "b"] },
+            output: { selected: "a" },
+          } as any,
+        ],
+      },
+    ];
+    expect(detectAskUserResume(messages)).toBe("a");
+  });
+
+  it("ignores ask_user parts that are still input-available (interrupt not yet resolved)", () => {
+    const messages: UIMessage[] = [
+      { id: "u1", role: "user", parts: [{ type: "text", text: "请采访我" }] },
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-ask_user",
+            toolCallId: "tc-1",
+            state: "input-available",
+            input: { question: "?", options: ["a", "b"] },
+          } as any,
+        ],
+      },
+    ];
+    expect(detectAskUserResume(messages)).toBeNull();
   });
 });

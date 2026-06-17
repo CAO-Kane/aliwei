@@ -358,13 +358,17 @@ const AssistantMessage: FC = () => {
           groupBy={groupPartByType({
             reasoning: ["group-chainOfThought", "group-reasoning"],
             "tool-call": ["group-chainOfThought", "group-tool"],
-            "standalone-tool-call": [],
+            "standalone-tool-call": ["group-standalone-tool"],
           })}
         >
           {({ part, children }) => {
             switch (part.type) {
               case "group-chainOfThought":
                 return <div data-slot="aui_chain-of-thought">{children}</div>;
+              case "group-standalone-tool":
+                // No collapsible wrapper — standalone tool UI renders inline
+                // (e.g. ask_user question card waiting for selection).
+                return <div data-slot="aui_standalone-tool">{children}</div>;
               case "group-tool":
                 if (ToolGroup) {
                   return <ToolGroup group={part}>{children}</ToolGroup>;

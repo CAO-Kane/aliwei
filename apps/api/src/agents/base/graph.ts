@@ -21,7 +21,11 @@ export function createBaseGraph<A extends typeof BaseState>(
   const allTools: StructuredToolInterface[] = [askUserTool, ...(opts.extraTools ?? [])];
   const toolNode = new ToolNode(allTools as any);
 
-  const callModel = makeCallModelNode(opts.systemPromptFn as any, opts.model);
+  if (typeof opts.model.bindTools !== "function") {
+    throw new Error("createBaseGraph requires a model that supports bindTools()");
+  }
+  const modelWithTools = opts.model.bindTools(allTools as any) as unknown as BaseChatModel;
+  const callModel = makeCallModelNode(opts.systemPromptFn as any, modelWithTools);
 
   const graph = new StateGraph(opts.stateAnnotation)
     .addNode("call_model", callModel as any)

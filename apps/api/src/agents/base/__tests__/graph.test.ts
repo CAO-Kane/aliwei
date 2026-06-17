@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { FakeListChatModel } from "@langchain/core/utils/testing";
 import { BaseState } from "../state";
 import { createBaseGraph } from "../graph";
 import { resetCheckpointer } from "../checkpointer";
+import { askUserTool } from "../../shared/tools";
 import * as fs from "node:fs";
 
 const TEST_DB = "/tmp/aliwei-test-graph.db";
@@ -55,5 +56,31 @@ describe("createBaseGraph", () => {
     );
 
     expect(second.messages.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("binds tools to the model so the LLM emits structured tool_calls (not JSON-in-content)", () => {
+    const fake = new FakeListChatModel({ responses: ["irrelevant"] });
+    const bindSpy = vi.spyOn(fake, "bindTools");
+
+    const extraTool = {
+      name: "extra_tool",
+      description: "x",
+      schema: { type: "object" } as any,
+      invoke: async () => "",
+    } as any;
+
+    createBaseGraph({
+      toolId: "okr",
+      stateAnnotation: BaseState,
+      systemPromptFn: () => "you are a test",
+      model: fake as any,
+      extraTools: [extraTool],
+    });
+
+    expect(bindSpy).toHaveBeenCalledTimes(1);
+    const boundTools = bindSpy.mock.calls[0][0] as any[];
+    const names = boundTools.map((t) => t.name);
+    expect(names).toContain(askUserTool.name);
+    expect(names).toContain("extra_tool");
   });
 });
