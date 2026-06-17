@@ -15,6 +15,10 @@ type CsvRow = {
 // Synchronous: called from client.ts during module init, alongside other
 // schema bootstrapping. better-sqlite3 transactions are sync, so we keep
 // the whole pipeline sync too — no async/await leak into the import graph.
+//
+// The CSV is the source of truth: every startup reconciles the jargon
+// table to match it. The single transaction does upserts for all CSV
+// rows, then deletes any table row whose `jargon` key is not in the CSV.
 export function seedJargonFromCsv(): void {
   const csvPath = path.resolve(
     import.meta.dirname,
@@ -34,15 +38,28 @@ export function seedJargonFromCsv(): void {
     );
   }
 
-  const insert = sqlite.prepare(
-    `INSERT OR IGNORE INTO jargon
+  const upsert = sqlite.prepare(
+    `INSERT INTO jargon
        (jargon, short_definition, definition, easy_understanding, use_example, bad_example)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(jargon) DO UPDATE SET
+       short_definition   = excluded.short_definition,
+       definition         = excluded.definition,
+       easy_understanding = excluded.easy_understanding,
+       use_example        = excluded.use_example,
+       bad_example        = excluded.bad_example`,
   );
-  const insertMany = sqlite.transaction((rows: CsvRow[]) => {
+  const deleteMissing = sqlite.prepare(
+    `DELETE FROM jargon WHERE jargon NOT IN (SELECT value FROM json_each(?))`,
+  );
+
+  const reconcile = sqlite.transaction((rows: CsvRow[]) => {
+    const keys: string[] = [];
     for (const r of rows) {
-      insert.run(
-        r.jargon.trim(),
+      const key = r.jargon.trim();
+      keys.push(key);
+      upsert.run(
+        key,
         r.short_definition,
         r.definition,
         r.easy_understanding,
@@ -50,6 +67,7 @@ export function seedJargonFromCsv(): void {
         r.bad_example,
       );
     }
+    deleteMissing.run(JSON.stringify(keys));
   });
-  insertMany(parsed.data);
+  reconcile(parsed.data);
 }
