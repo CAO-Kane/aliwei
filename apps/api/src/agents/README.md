@@ -13,6 +13,13 @@ agents/
 │   ├── model.ts                # getChatModel (OpenAI 兼容 / 阿里 Moark)
 │   └── checkpointer.ts         # SqliteSaver + WAL
 ├── shared/
+│   ├── prompts/
+│   │   ├── base.ts             # buildSystemPrompt (injects jargon dict)
+│   │   ├── jargon.ts           # JARGON_TOOL_PROMPT
+│   │   ├── okr.ts              # OKR_TOOL_PROMPT
+│   │   ├── review.ts           # REVIEW_TOOL_PROMPT
+│   │   ├── weekly.ts           # WEEKLY_TOOL_PROMPT
+│   │   └── index.ts
 │   ├── tools.ts                # askUserTool (带 interrupt)
 │   └── stream-adapter.ts       # langgraph events → UIMessageStream
 ├── jargon/graph.ts
