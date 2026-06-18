@@ -28,11 +28,16 @@ app.post("/", async (c) => {
     );
   }
 
-  const text = await extractDocumentText(file);
-  if (!text) {
-    return c.json({ error: "未能从文档中提取到文字" }, 422);
+  try {
+    const text = await extractDocumentText(file);
+    if (!text) {
+      return c.json({ error: "未能从文档中提取到文字" }, 422);
+    }
+    return c.json({ text });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return c.json({ error: `文档解析失败: ${message}` }, 422);
   }
-  return c.json({ text });
 });
 
 export default app;
