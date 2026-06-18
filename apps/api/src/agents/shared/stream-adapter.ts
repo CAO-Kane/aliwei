@@ -102,7 +102,7 @@ export async function streamGraphToUIMessageStream(
   options?: { isResume?: boolean; skipPrefix?: string },
 ): Promise<Response> {
   const messageId = crypto.randomUUID();
-  const textId = crypto.randomUUID();
+  let textId = crypto.randomUUID();
   let textOpen = false;
   let stepOpen = false;
   let finishedNormally = true;
@@ -149,12 +149,14 @@ export async function streamGraphToUIMessageStream(
             // makes from this point are new and must be surfaced to the client.
             skipToolEvents = false;
             if (textOpen) {
+              writer.write({ type: "text-delta", id: textId, delta: "\n\n" } as any);
               writer.write({ type: "text-end", id: textId } as any);
               textOpen = false;
             }
             if (stepOpen) {
               writer.write({ type: "finish-step" } as any);
             }
+            textId = crypto.randomUUID();
             writer.write({ type: "start-step" } as any);
             stepOpen = true;
           } else if (event.event === "on_chat_model_stream") {
