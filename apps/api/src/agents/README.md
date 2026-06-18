@@ -79,7 +79,7 @@ apps/api/src/agents/
 │   └── checkpointer.ts                # SqliteSaver + WAL
 ├── shared/
 │   ├── prompts/                       # ★ system prompt 模板
-│   │   ├── base.ts                    #   buildSystemPrompt (通用规则 + 黑话词库)
+│   │   ├── base.ts                    #   buildSystemPrompt (通用规则 + 阿里黑话词库,词库从 @aliwei/db 读)
 │   │   ├── jargon.ts                  #   JARGON_TOOL_PROMPT
 │   │   ├── okr.ts                     #   OKR_TOOL_PROMPT
 │   │   ├── review.ts                  #   REVIEW_TOOL_PROMPT
@@ -99,7 +99,7 @@ apps/api/src/agents/
     └── tools.ts                       # searchPastReviewsTool
 ```
 
-**`packages/domain` 的角色** —— 只剩三层:类型(`types.ts`)、数据(`jargon-dict.ts`)、TOOLS 注册表(`tools.ts`,纯元数据)。**所有 system prompt 都已经在 api 侧,不在 domain 里。**
+**`packages/domain` 的角色** —— 只剩两层:类型(`types.ts`)、TOOLS 注册表(`tools.ts`,纯元数据)。**所有 system prompt 都已经在 api 侧,不在 domain 里;阿里黑话词库也不再放在 domain,而是迁到 `packages/db/data/jargon.csv`,启动时由 db 包同步到 SQLite 的 `jargon` 表,`buildSystemPrompt` 通过 `@aliwei/db` 的 `getAllJargon()` + `formatJargonForPrompt()` 读。**
 
 ### 调用入口
 
@@ -191,6 +191,8 @@ final system prompt = buildSystemPrompt(TOOL_PROMPT)
 ```
 
 `buildSystemPrompt` 在 `shared/prompts/base.ts`,**所有 agent 共享同一份包装逻辑**。每个 agent 只负责写自己的 `*_TOOL_PROMPT`(也就是"我作为这个工具的职责是什么")。
+
+**黑话词库不是内嵌字符串** —— `buildSystemPrompt` 在模块加载时调一次 `getAllJargon()` + `formatJargonForPrompt()`,从 `@aliwei/db` 的 `jargon` 表读。改词库 = 改 `packages/db/data/jargon.csv` + 重启 api(`packages/db/src/jargon-seed.ts::seedJargonFromCsv` 启动时把 CSV 同步成表的镜像)。详细数据流见 `packages/db/README.md`。
 
 **重要**:`buildSystemPrompt` 末尾会自动拼上:
 
