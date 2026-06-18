@@ -1,4 +1,4 @@
-import { SystemMessage, isAIMessage, type BaseMessage } from "@langchain/core/messages";
+import { SystemMessage, AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { END } from "@langchain/langgraph";
 import type { BaseState } from "./state";
@@ -19,6 +19,8 @@ export function makeCallModelNode(
 
 export function shouldContinue(state: BaseStateShape): "tools" | typeof END {
   const last = state.messages.at(-1);
-  if (!last || !isAIMessage(last)) return END;
-  return last.tool_calls && last.tool_calls.length > 0 ? "tools" : END;
+  // _getType() is more robust than instanceof across serialization boundaries
+  if (!last || last._getType() !== "ai") return END;
+  const ai = last as AIMessage;
+  return ai.tool_calls && ai.tool_calls.length > 0 ? "tools" : END;
 }

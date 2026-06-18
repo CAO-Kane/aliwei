@@ -99,13 +99,19 @@ export async function streamGraphToUIMessageStream(
   input: any,
   threadId: string,
   onFinish?: OnFinish,
-  options?: { isResume?: boolean },
+  options?: { isResume?: boolean; skipPrefix?: string },
 ): Promise<Response> {
   const messageId = crypto.randomUUID();
   const textId = crypto.randomUUID();
   let textOpen = false;
   let stepOpen = false;
   let finishedNormally = true;
+  const skipPrefix = options?.skipPrefix ?? "";
+  // Streaming path: buffer text until we can determine whether it starts with
+  // the skip prefix. Once determined, either discard the prefix chars and emit
+  // the remainder, or emit everything unchanged (model isn't echoing).
+  let prefixBuffer = "";
+  let prefixDone = skipPrefix.length === 0;
   // When resuming an interrupted graph, langgraph re-plays the same tool
   // node (re-enters the tool function so interrupt() can return). That
   // surfaces as a fresh on_tool_start/on_tool_end pair with a NEW run_id.
@@ -152,7 +158,25 @@ export async function streamGraphToUIMessageStream(
             writer.write({ type: "start-step" } as any);
             stepOpen = true;
           } else if (event.event === "on_chat_model_stream") {
-            const deltas = extractTextDeltas(event.data?.chunk?.content);
+            const rawDeltas = extractTextDeltas(event.data?.chunk?.content);
+            if (rawDeltas.length === 0) continue;
+            // Apply skip-prefix buffering when resuming after ask_user.
+            const deltas: string[] = [];
+            for (const d of rawDeltas) {
+              if (prefixDone) {
+                deltas.push(d);
+                continue;
+              }
+              prefixBuffer += d;
+              if (prefixBuffer.length >= skipPrefix.length) {
+                prefixDone = true;
+                const remainder = prefixBuffer.startsWith(skipPrefix)
+                  ? prefixBuffer.slice(skipPrefix.length)
+                  : prefixBuffer;
+                prefixBuffer = "";
+                if (remainder) deltas.push(remainder);
+              }
+            }
             if (deltas.length === 0) continue;
             if (!textOpen) {
               writer.write({ type: "text-start", id: textId } as any);
@@ -166,7 +190,10 @@ export async function streamGraphToUIMessageStream(
             // events). If we received no stream chunks for this turn, pull
             // the final text out of the end event and emit it once.
             if (!textOpen) {
-              const finalText = extractFinalText(event.data);
+              let finalText = extractFinalText(event.data);
+              if (skipPrefix && finalText.startsWith(skipPrefix)) {
+                finalText = finalText.slice(skipPrefix.length);
+              }
               if (finalText) {
                 writer.write({ type: "text-start", id: textId } as any);
                 writer.write({ type: "text-delta", id: textId, delta: finalText } as any);
@@ -240,6 +267,15 @@ export async function streamGraphToUIMessageStream(
         }
         finishedNormally = false;
       } finally {
+        // Flush streaming prefix buffer if the model finished before we
+        // accumulated enough chars to determine a match.
+        if (!prefixDone && prefixBuffer) {
+          if (!textOpen) {
+            writer.write({ type: "text-start", id: textId } as any);
+            textOpen = true;
+          }
+          writer.write({ type: "text-delta", id: textId, delta: prefixBuffer } as any);
+        }
         if (textOpen) writer.write({ type: "text-end", id: textId } as any);
         // Always close the open step. Suppressing finish-step on interrupt
         // (the previous design) meant assistant-ui never marked the step

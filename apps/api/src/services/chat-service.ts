@@ -33,6 +33,30 @@ export function lastUserText(messages: UIMessage[]): string {
   return lastUser ? extractText(lastUser) : "";
 }
 
+// Returns the text content of the last step in the last assistant message.
+// Used as skipPrefix when resuming after ask_user: Qwen echoes the AIMessage
+// content from the final LLM step (the step that called ask_user) when it
+// resumes, so we strip that prefix from its new response.
+function getLastAssistantText(messages: UIMessage[]): string {
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  if (!lastAssistant) return "";
+  const parts = lastAssistant.parts as Array<{ type?: string; text?: string }>;
+  // Find start of the last step so we only extract text from that step.
+  // Earlier steps correspond to prior LangGraph LLM invocations whose
+  // AIMessage content Qwen does NOT re-echo.
+  let lastStepIdx = 0;
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i].type === "step-start") lastStepIdx = i;
+  }
+  return parts
+    .slice(lastStepIdx)
+    .filter(
+      (p): p is { type: "text"; text: string } => p.type === "text" && typeof p.text === "string",
+    )
+    .map((p) => p.text)
+    .join("");
+}
+
 // Detects "this request is a resume of an interrupted ask_user tool" by
 // finding an assistant message whose final tool part is a completed
 // ask_user invocation (output-available) that hasn't been answered by a
@@ -177,12 +201,13 @@ export async function streamChat(req: ChatRequest) {
   const resumeValue: string | boolean | null = resumeAnswer ?? suggestAgentAnswer;
 
   if (resumeValue !== null) {
+    const skipPrefix = getLastAssistantText(req.messages);
     const response = await streamGraphToUIMessageStream(
       graph,
       new Command({ resume: resumeValue }),
       currentThreadId,
       onFinish,
-      { isResume: true },
+      { isResume: true, skipPrefix },
     );
     touchThread(currentThreadId);
     return response;

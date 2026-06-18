@@ -4,6 +4,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { createBaseGraph } from "../base/graph";
 import { BaseState } from "../base/state";
 import { JARGON_TOOL_PROMPT, buildSystemPrompt } from "../shared/prompts";
+import { jargonLookupTool } from "../shared/jargon-lookup-tool";
 import { streamGraphToUIMessageStream } from "../shared/stream-adapter";
 
 export function createJargonGraph(model: BaseChatModel): CompiledStateGraph<any, any, any> {
@@ -11,6 +12,7 @@ export function createJargonGraph(model: BaseChatModel): CompiledStateGraph<any,
     agentId: "jargon",
     stateAnnotation: BaseState,
     systemPromptFn: () => buildSystemPrompt(JARGON_TOOL_PROMPT),
+    extraTools: [jargonLookupTool],
     model,
   }) as any;
 }

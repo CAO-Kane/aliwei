@@ -4,6 +4,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { createBaseGraph } from "../base/graph";
 import { OkrState } from "../base/state";
 import { OKR_TOOL_PROMPT, buildSystemPrompt } from "../shared/prompts";
+import { jargonLookupTool } from "../shared/jargon-lookup-tool";
 import { streamGraphToUIMessageStream } from "../shared/stream-adapter";
 
 export function createOkrGraph(model: BaseChatModel): CompiledStateGraph<any, any, any> {
@@ -11,6 +12,7 @@ export function createOkrGraph(model: BaseChatModel): CompiledStateGraph<any, an
     agentId: "okr",
     stateAnnotation: OkrState as any,
     systemPromptFn: () => buildSystemPrompt(OKR_TOOL_PROMPT),
+    extraTools: [jargonLookupTool],
     model,
   }) as any;
 }
