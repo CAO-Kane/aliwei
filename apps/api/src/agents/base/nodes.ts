@@ -9,7 +9,9 @@ export function makeCallModelNode(
   systemPromptFn: (state: BaseStateShape) => string,
   model: BaseChatModel,
 ) {
-  return async (state: BaseStateShape): Promise<Partial<BaseStateShape>> => {
+  return async (
+    state: BaseStateShape,
+  ): Promise<Partial<BaseStateShape>> => {
     const system = systemPromptFn(state);
     const messages: BaseMessage[] = [new SystemMessage(system), ...state.messages];
     const ai: BaseMessage = await model.invoke(messages);
@@ -17,7 +19,9 @@ export function makeCallModelNode(
   };
 }
 
-export function shouldContinue(state: BaseStateShape): "tools" | typeof END {
+export function shouldContinue(
+  state: BaseStateShape,
+): "tools" | typeof END {
   const last = state.messages.at(-1);
   if (!last || !isAIMessage(last)) return END;
   return last.tool_calls && last.tool_calls.length > 0 ? "tools" : END;

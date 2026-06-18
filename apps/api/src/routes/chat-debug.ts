@@ -6,12 +6,12 @@ import { createJargonGraph, jargonStreamChat } from "@/agents/jargon/graph";
 const app = new Hono();
 
 app.get("/", async (c) => {
-  const agentId = c.req.query("agentId") ?? "jargon";
+  const toolId = c.req.query("toolId") ?? "jargon";
   const message = c.req.query("message") ?? "hi";
   const threadId = c.req.query("threadId") ?? `debug-${Date.now()}`;
 
-  if (agentId !== "jargon") {
-    return c.json({ error: `debug route only supports agentId=jargon (got ${agentId})` }, 400);
+  if (toolId !== "jargon") {
+    return c.json({ error: `debug route only supports toolId=jargon (got ${toolId})` }, 400);
   }
 
   const fake = new FakeListChatModel({
@@ -23,7 +23,7 @@ app.get("/", async (c) => {
     graph,
     userMessage: new HumanMessage(message),
     threadId,
-    agentId,
+    toolId,
   });
 });
 

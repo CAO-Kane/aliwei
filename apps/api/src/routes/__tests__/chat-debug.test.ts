@@ -25,7 +25,7 @@ describe("GET /chat/debug", () => {
 
   it("returns the final assistant text from the graph (fake LLM)", async () => {
     const app = buildApp();
-    const res = await app.request("/chat/debug?agentId=jargon&message=hi");
+    const res = await app.request("/chat/debug?toolId=jargon&message=hi");
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/event-stream");
   });

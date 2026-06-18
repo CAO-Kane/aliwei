@@ -1,6 +1,10 @@
 import type { CompiledStateGraph } from "@langchain/langgraph";
 import { Command, isGraphInterrupt } from "@langchain/langgraph";
-import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+} from "ai";
 
 export { Command };
 
@@ -158,8 +162,7 @@ export async function streamGraphToUIMessageStream(
               writer.write({ type: "text-start", id: textId } as any);
               textOpen = true;
             }
-            for (const d of deltas)
-              writer.write({ type: "text-delta", id: textId, delta: d } as any);
+            for (const d of deltas) writer.write({ type: "text-delta", id: textId, delta: d } as any);
           } else if (event.event === "on_chat_model_end") {
             // Fallback for non-streaming providers (Qwen / Aliyun can return
             // the entire response in one shot without on_chat_model_stream

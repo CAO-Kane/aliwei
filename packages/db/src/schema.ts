@@ -4,7 +4,7 @@ export const threads = sqliteTable("threads", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),
   title: text("title").notNull(),
-  agentId: text("agent_id"),
+  toolId: text("tool_id"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });

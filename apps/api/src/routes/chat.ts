@@ -9,7 +9,7 @@ type Body = {
   system?: string;
   tools?: Record<string, { description?: string; parameters: JSONSchema7 }>;
   threadId?: string;
-  agentId?: string | null; // renamed from toolId; null when no agent is active
+  toolId?: string;
 };
 
 app.post("/", async (c) => {

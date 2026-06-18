@@ -28,10 +28,10 @@ aliwei/
 ## 依赖关系
 
 ```
-apps/web      ──► @aliwei/domain   (拿 AGENTS 数组,渲染 4 个 agent 按钮+欢迎语)
+apps/web      ──► @aliwei/domain   (拿 TOOLS 数组,渲染 4 个工具按钮+欢迎语)
               └─► @aliwei/ui       (assistant-ui + primitives + cn)
 
-apps/api      ──► @aliwei/domain   (拿 AgentId / 黑话词库)
+apps/api      ──► @aliwei/domain   (拿 systemPrompt 喂给 LLM)
               └─► @aliwei/db       (持久化 threads + messages)
 
 apps/dingtalk ──► (将来按需挑,跟 api 走同一套 HTTP 协议)
@@ -69,5 +69,5 @@ pnpm dev:web    # http://localhost:3000
 
 ## 其他文档
 
-- LangGraph + HITL 开发手册:[`apps/api/src/agents/README.md`](apps/api/src/agents/README.md)
+- LangGraph 集成预留:[`apps/api/src/agents/README.md`](apps/api/src/agents/README.md)
 - 钉钉端方案:[`apps/dingtalk/README.md`](apps/dingtalk/README.md)

@@ -8,14 +8,16 @@ import { getCheckpointer } from "./checkpointer";
 import { askUserTool } from "../shared/tools";
 
 export type CreateBaseGraphOpts<A extends typeof BaseState> = {
-  agentId: string; // renamed from toolId
+  toolId: string;
   stateAnnotation: A;
   systemPromptFn: (state: A["State"]) => string;
   extraTools?: StructuredToolInterface[];
   model: BaseChatModel;
 };
 
-export function createBaseGraph<A extends typeof BaseState>(opts: CreateBaseGraphOpts<A>) {
+export function createBaseGraph<A extends typeof BaseState>(
+  opts: CreateBaseGraphOpts<A>,
+) {
   const allTools: StructuredToolInterface[] = [askUserTool, ...(opts.extraTools ?? [])];
   const toolNode = new ToolNode(allTools as any);
 

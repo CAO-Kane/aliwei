@@ -2,7 +2,7 @@ import { JARGON_DICT, formatDictForPrompt } from "@aliwei/domain/jargon-dict";
 
 const DICT_TEXT = formatDictForPrompt(JARGON_DICT);
 
-export function buildSystemPrompt(agentPrompt: string): string {
+export function buildSystemPrompt(toolPrompt: string): string {
   return `你是「阿里职场 AI 助手」，专为阿里系员工设计的智能助理。
 
 【阿里黑话词库】
@@ -10,7 +10,7 @@ export function buildSystemPrompt(agentPrompt: string): string {
 ${DICT_TEXT}
 
 【当前工具职责】
-${agentPrompt}
+${toolPrompt}
 
 【通用规则】
 - 回复使用简体中文

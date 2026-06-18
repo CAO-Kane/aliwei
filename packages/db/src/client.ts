@@ -9,19 +9,12 @@ const sqlite = new Database(DB_PATH);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 
-// Run before CREATE TABLE IF NOT EXISTS — safe to run on fresh DBs (no-op if column doesn't exist)
-try {
-  sqlite.exec(`ALTER TABLE threads RENAME COLUMN tool_id TO agent_id;`);
-} catch {
-  // Column already renamed or table doesn't exist yet — both fine
-}
-
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS threads (
     id         TEXT PRIMARY KEY,
     user_id    TEXT NOT NULL,
     title      TEXT NOT NULL,
-    agent_id   TEXT,
+    tool_id    TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   );

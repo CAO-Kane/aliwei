@@ -32,7 +32,7 @@ describe("POST /chat", () => {
     const res = await app.request("/chat/continue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ threadId: "t-1", agentId: "jargon", answer: "yes" }),
+      body: JSON.stringify({ threadId: "t-1", toolId: "jargon", answer: "yes" }),
     });
     expect(res.status).toBe(404);
   });
@@ -44,7 +44,7 @@ describe("POST /chat", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         threadId: `t-resume-${Date.now()}`,
-        agentId: "jargon",
+        toolId: "jargon",
         messages: [
           { id: "u1", role: "user", parts: [{ type: "text", text: "请采访我" }] },
           {

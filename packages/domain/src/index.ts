@@ -1,3 +1,3 @@
 export * from "./types";
-export * from "./agents";
+export * from "./tools";
 export * from "./jargon-dict";

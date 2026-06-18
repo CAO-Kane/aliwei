@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { resetChatModel } from "@/agents/base/model";
 import { resetCheckpointer } from "@/agents/base/checkpointer";
-import {
-  streamChat,
-  lastUserText,
-  detectAskUserResume,
-  detectSuggestAgentResume,
-} from "../chat-service";
+import { streamChat, lastUserText, detectAskUserResume } from "../chat-service";
 import type { UIMessage } from "ai";
 
 describe("streamChat", () => {
@@ -20,13 +15,13 @@ describe("streamChat", () => {
     resetCheckpointer();
   });
 
-  it("routes agentId=jargon to langgraph and returns a text/event-stream Response", async () => {
+  it("routes toolId=jargon to langgraph and returns a text/event-stream Response", async () => {
     const messages: UIMessage[] = [
       { id: "u1", role: "user", parts: [{ type: "text", text: "banding 是啥?" }] },
     ];
     const res = await streamChat({
       messages,
-      agentId: "jargon",
+      toolId: "jargon",
       threadId: `test-jargon-${Date.now()}`,
       userId: "guest-test",
     });
@@ -36,13 +31,13 @@ describe("streamChat", () => {
     res.body?.cancel();
   });
 
-  it("routes agentId=weekly to langgraph and returns a Response", async () => {
+  it("routes toolId=weekly to langgraph and returns a Response", async () => {
     const messages: UIMessage[] = [
       { id: "u1", role: "user", parts: [{ type: "text", text: "本周做了啥" }] },
     ];
     const res = await streamChat({
       messages,
-      agentId: "weekly",
+      toolId: "weekly",
       threadId: `test-weekly-${Date.now()}`,
       userId: "guest-test",
     });
@@ -228,75 +223,5 @@ describe("detectAskUserResume", () => {
       },
     ];
     expect(detectAskUserResume(messages)).toBeNull();
-  });
-});
-
-describe("detectSuggestAgentResume", () => {
-  it("returns null when last message is from user", () => {
-    const messages: UIMessage[] = [
-      { id: "u1", role: "user", parts: [{ type: "text", text: "hi" }] },
-    ];
-    expect(detectSuggestAgentResume(messages)).toBeNull();
-  });
-
-  it("returns true when last assistant part is a confirmed suggest_agent", () => {
-    const messages: UIMessage[] = [
-      { id: "u1", role: "user", parts: [{ type: "text", text: "帮我写周报" }] },
-      {
-        id: "a1",
-        role: "assistant",
-        parts: [
-          {
-            type: "tool-suggest_agent",
-            toolCallId: "tc-1",
-            state: "output-available",
-            input: { agentId: "weekly", reason: "用户想写周报" },
-            output: { confirmed: true },
-          } as any,
-        ],
-      },
-    ];
-    expect(detectSuggestAgentResume(messages)).toBe(true);
-  });
-
-  it("returns false when user declined", () => {
-    const messages: UIMessage[] = [
-      { id: "u1", role: "user", parts: [{ type: "text", text: "帮我写周报" }] },
-      {
-        id: "a1",
-        role: "assistant",
-        parts: [
-          {
-            type: "tool-suggest_agent",
-            toolCallId: "tc-1",
-            state: "output-available",
-            input: { agentId: "weekly", reason: "用户想写周报" },
-            output: { confirmed: false },
-          } as any,
-        ],
-      },
-    ];
-    expect(detectSuggestAgentResume(messages)).toBe(false);
-  });
-
-  it("returns null when the LLM has already consumed the suggest_agent result (text after)", () => {
-    const messages: UIMessage[] = [
-      { id: "u1", role: "user", parts: [{ type: "text", text: "帮我写周报" }] },
-      {
-        id: "a1",
-        role: "assistant",
-        parts: [
-          {
-            type: "tool-suggest_agent",
-            toolCallId: "tc-1",
-            state: "output-available",
-            input: { agentId: "weekly", reason: "用户想写周报" },
-            output: { confirmed: true },
-          } as any,
-          { type: "text", text: "好的，已为你切换！" } as any,
-        ],
-      },
-    ];
-    expect(detectSuggestAgentResume(messages)).toBeNull();
   });
 });
