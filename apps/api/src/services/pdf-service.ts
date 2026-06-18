@@ -6,10 +6,15 @@ import { generateText } from "ai";
 import { writeFile, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { getLlmClient } from "@/services/llm-client";
 
-// Disable web worker — Node.js has no DOM worker, run single-threaded
-pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+// pdfjs v6 requires an explicit workerSrc; point it at the legacy worker file
+const _require = createRequire(import.meta.url);
+pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
+  _require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs"),
+).href;
 
 const MAX_CHARS = 6000;
 const MAX_PDF_PAGES = 10;
