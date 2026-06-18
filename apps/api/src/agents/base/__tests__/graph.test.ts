@@ -19,14 +19,14 @@ describe("createBaseGraph", () => {
   it("runs a no-tool round trip: HumanMessage → AIMessage", async () => {
     const fake = new FakeListChatModel({ responses: ["hello back"] });
     const graph = createBaseGraph({
-      toolId: "jargon",
+      agentId: "jargon",
       stateAnnotation: BaseState,
       systemPromptFn: () => "you are a test",
       model: fake as any,
     });
 
     const result = await graph.invoke(
-      { messages: [new HumanMessage("hi")], threadId: "t-1", toolId: "jargon" } as any,
+      { messages: [new HumanMessage("hi")], threadId: "t-1", agentId: "jargon" } as any,
       { configurable: { thread_id: "t-1" } },
     );
 
@@ -39,19 +39,19 @@ describe("createBaseGraph", () => {
   it("checkpointer restores state.messages on second invocation with same thread_id", async () => {
     const fake = new FakeListChatModel({ responses: ["first reply", "second reply"] });
     const graph = createBaseGraph({
-      toolId: "jargon",
+      agentId: "jargon",
       stateAnnotation: BaseState,
       systemPromptFn: () => "you are a test",
       model: fake as any,
     });
 
     await graph.invoke(
-      { messages: [new HumanMessage("hi")], threadId: "t-2", toolId: "jargon" } as any,
+      { messages: [new HumanMessage("hi")], threadId: "t-2", agentId: "jargon" } as any,
       { configurable: { thread_id: "t-2" } },
     );
 
     const second = await graph.invoke(
-      { messages: [new HumanMessage("again")], threadId: "t-2", toolId: "jargon" } as any,
+      { messages: [new HumanMessage("again")], threadId: "t-2", agentId: "jargon" } as any,
       { configurable: { thread_id: "t-2" } },
     );
 
@@ -70,7 +70,7 @@ describe("createBaseGraph", () => {
     } as any;
 
     createBaseGraph({
-      toolId: "okr",
+      agentId: "okr",
       stateAnnotation: BaseState,
       systemPromptFn: () => "you are a test",
       model: fake as any,

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { HumanMessage, AIMessage } from "@langchain/core/messages";
+import { HumanMessage } from "@langchain/core/messages";
 import { FakeListChatModel } from "@langchain/core/utils/testing";
 import { createJargonGraph, jargonStreamChat } from "../graph";
 import { resetCheckpointer } from "../../base/checkpointer";
@@ -30,7 +30,7 @@ describe("jargon graph", () => {
       graph: g,
       userMessage: new HumanMessage("banding 是啥?"),
       threadId: "t-jargon-1",
-      toolId: "jargon",
+      agentId: "jargon",
     });
     expect(res).toBeInstanceOf(Response);
     expect(res.headers.get("content-type")).toContain("text/event-stream");

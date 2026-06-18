@@ -20,7 +20,7 @@ app.use(
     // configure WEB_ORIGIN per environment in prod.
     origin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
     credentials: true,
-    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type"],
   }),
 );

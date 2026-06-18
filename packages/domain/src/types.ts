@@ -1,7 +1,7 @@
-export type ToolId = "jargon" | "weekly" | "okr" | "review";
+export type AgentId = "jargon" | "weekly" | "okr" | "review" | "start";
 
-export type Tool = {
-  id: ToolId;
+export type Agent = {
+  id: AgentId;
   label: string;
   starter: string;
 };
@@ -9,6 +9,6 @@ export type Tool = {
 export type ThreadMeta = {
   id: string;
   title: string;
-  toolId: string | null;
+  agentId: string | null;
   updatedAt: number;
 };

@@ -1,11 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { streamGraphToUIMessageStream } from "../stream-adapter";
 import { GraphInterrupt } from "@langchain/langgraph";
-import {
-  parseJsonEventStream,
-  uiMessageChunkSchema,
-  type UIMessageChunk,
-} from "ai";
+import { parseJsonEventStream, uiMessageChunkSchema, type UIMessageChunk } from "ai";
 
 async function readChunks(res: Response): Promise<UIMessageChunk[]> {
   const parsed = parseJsonEventStream({
@@ -293,13 +289,9 @@ describe("streamGraphToUIMessageStream", () => {
     }
 
     const mockGraph = { streamEvents: () => fakeStreamEvents() } as any;
-    const res = await streamGraphToUIMessageStream(
-      mockGraph,
-      {} as any,
-      "t-resume",
-      undefined,
-      { isResume: true },
-    );
+    const res = await streamGraphToUIMessageStream(mockGraph, {} as any, "t-resume", undefined, {
+      isResume: true,
+    });
     const chunks = await readChunks(res);
 
     // No tool events should appear in the stream.
@@ -368,13 +360,9 @@ describe("streamGraphToUIMessageStream", () => {
     }
 
     const mockGraph = { streamEvents: () => fakeStreamEvents() } as any;
-    const res = await streamGraphToUIMessageStream(
-      mockGraph,
-      {} as any,
-      "t-resume-q2",
-      undefined,
-      { isResume: true },
-    );
+    const res = await streamGraphToUIMessageStream(mockGraph, {} as any, "t-resume-q2", undefined, {
+      isResume: true,
+    });
     const chunks = await readChunks(res);
 
     // Q1 replay must NOT appear
@@ -396,9 +384,11 @@ describe("streamGraphToUIMessageStream", () => {
     // new Error whose .message is the original error's stack string:
     // "[JSON]\n\nGraphInterrupt: [JSON]\n    at interrupt..."
     // JSON.parse fails on that, so keyword matching must catch it.
-    const interruptJson = JSON.stringify([
-      { id: "xyz", value: { question: "choose", options: ["A", "B"] } },
-    ], null, 2);
+    const interruptJson = JSON.stringify(
+      [{ id: "xyz", value: { question: "choose", options: ["A", "B"] } }],
+      null,
+      2,
+    );
     const stackLikeMessage = `${interruptJson}\n\nGraphInterrupt: ${interruptJson}\n    at interrupt (langgraph/dist/interrupt.js:70:9)`;
     const rewrappedError = new Error(stackLikeMessage);
     rewrappedError.name = "Error"; // NOT "GraphInterrupt"
@@ -477,7 +467,10 @@ describe("streamGraphToUIMessageStream", () => {
       (c) => c.type === "tool-input-available" && (c as any).toolName === "ask_user",
     ) as any;
     expect(inputAvail).toBeDefined();
-    expect(inputAvail.input).toEqual({ question: "prefer tea or coffee?", options: ["tea", "coffee"] });
+    expect(inputAvail.input).toEqual({
+      question: "prefer tea or coffee?",
+      options: ["tea", "coffee"],
+    });
   });
 
   it("suppresses stringified GraphInterrupt thrown after on_tool_error (no red box)", async () => {
@@ -541,9 +534,7 @@ describe("streamGraphToUIMessageStream", () => {
         event: "on_chat_model_end",
         data: {
           output: {
-            generations: [
-              [{ message: { content: "好的!请发给我吧。" } }],
-            ],
+            generations: [[{ message: { content: "好的!请发给我吧。" } }]],
           },
         },
         name: "ChatModel",

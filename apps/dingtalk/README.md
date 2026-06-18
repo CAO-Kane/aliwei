@@ -8,7 +8,7 @@
 
 1. 选框架:Next.js 复用(SSR + JS-SDK)/ Vite + React(纯 SPA)/ uni-app(同时出 H5 和小程序)
 2. 复用 `packages/*`:
-   - `@aliwei/domain` — TOOLS 数组 + prompts(完全无改动)
+   - `@aliwei/domain` — AGENTS 数组 + 黑话词库(完全无改动;prompts 在 apps/api 里)
    - `@aliwei/ui` — 大部分 assistant-ui 组件可直接用,`cn` 也在这
 3. 钉钉特有逻辑放本 app 内:
    - `src/client/auth/dingtalk-sso.ts` — 钉钉免登(替代 guest_id cookie)

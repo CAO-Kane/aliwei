@@ -1,22 +1,24 @@
 "use client";
 
 import { createContext } from "react";
-import type { ThreadMeta, Tool } from "@aliwei/domain/types";
+import type { ThreadMeta, Agent } from "@aliwei/domain/types";
 
 export type ThreadContextValue = {
   threads: ThreadMeta[];
   activeThreadId: string;
-  activeTool: Tool | null;
-  newThread: (tool?: Tool) => void;
+  activeAgent: Agent | null;
+  newThread: (agent?: Agent) => void;
   switchToThread: (threadId: string) => void;
   deleteThread: (threadId: string) => void;
+  requestAgentSwitch: (agent: Agent, message: string) => void;
 };
 
 export const ThreadContext = createContext<ThreadContextValue>({
   threads: [],
   activeThreadId: "",
-  activeTool: null,
+  activeAgent: null,
   newThread: () => {},
   switchToThread: () => {},
   deleteThread: () => {},
+  requestAgentSwitch: () => {},
 });

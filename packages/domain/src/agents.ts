@@ -1,6 +1,6 @@
-import type { Tool } from "./types";
+import type { Agent } from "./types";
 
-export const TOOLS: Tool[] = [
+export const AGENTS: Agent[] = [
   {
     id: "jargon",
     label: "黑话翻译器",
@@ -27,7 +27,7 @@ export const TOOLS: Tool[] = [
   },
 ];
 
-export function findTool(toolId: string | null | undefined): Tool | null {
-  if (!toolId) return null;
-  return TOOLS.find((t) => t.id === toolId) ?? null;
+export function findAgent(agentId: string | null | undefined): Agent | null {
+  if (!agentId) return null;
+  return AGENTS.find((a) => a.id === agentId) ?? null;
 }

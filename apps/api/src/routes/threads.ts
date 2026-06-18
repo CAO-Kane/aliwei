@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { getThread, updateThread } from "@aliwei/db";
 import { listThreadsForUser, loadMessages, removeThread } from "@/services/thread-service";
 
 const app = new Hono();
@@ -11,6 +12,18 @@ app.get("/", (c) => {
 app.get("/:id/messages", (c) => {
   const id = c.req.param("id");
   return c.json(loadMessages(id));
+});
+
+app.patch("/:id", async (c) => {
+  const id = c.req.param("id");
+  const userId = c.var.userId;
+  const thread = getThread(id);
+  if (!thread || thread.userId !== userId) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  const body = (await c.req.json()) as { agentId?: string };
+  updateThread(id, { agentId: body.agentId });
+  return c.json({ ok: true });
 });
 
 app.delete("/:id", (c) => {
