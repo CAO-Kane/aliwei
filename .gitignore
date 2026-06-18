@@ -86,6 +86,10 @@ secrets/
 local.db
 local.db-shm
 local.db-wal
+packages/db/data/*
+!packages/db/data/jargon.csv
+
+
 
 # Drizzle / ORM
 drizzle/.snapshot/
