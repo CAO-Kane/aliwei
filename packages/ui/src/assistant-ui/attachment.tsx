@@ -1,6 +1,6 @@
 "use client";
 
-import { type PropsWithChildren, useEffect, useState, type FC } from "react";
+import { type PropsWithChildren, useCallback, useEffect, useState, type FC } from "react";
 import { XIcon, PlusIcon, FileText } from "lucide-react";
 import {
   AttachmentPrimitive,
@@ -123,6 +123,47 @@ const AttachmentThumb: FC = () => {
   );
 };
 
+const DocumentTextPreview: FC = () => {
+  const [expanded, setExpanded] = useState(false);
+
+  const text = useAuiState(
+    useShallow((s) => {
+      if (s.attachment.type === "image") return null;
+      const found = s.attachment.content?.find((c) => c.type === "text");
+      return found ? (found as { type: "text"; text: string }).text : null;
+    }),
+  );
+
+  const toggle = useCallback(() => setExpanded((v) => !v), []);
+
+  if (!text) return null;
+
+  const preview = text.slice(0, 100);
+  const full = text.slice(0, 500);
+  const hasMore = text.length > 100;
+
+  return (
+    <div className="mt-1 max-w-56 rounded-md border bg-muted/50 p-2 text-xs text-muted-foreground">
+      <p className={cn(
+        "whitespace-pre-wrap break-words overflow-y-auto",
+        expanded ? "max-h-40" : "max-h-16",
+      )}>
+        {expanded ? full : preview}
+        {!expanded && hasMore && "…"}
+      </p>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={toggle}
+          className="mt-1 font-medium text-primary hover:underline"
+        >
+          {expanded ? "收起" : "展开"}
+        </button>
+      )}
+    </div>
+  );
+};
+
 const AttachmentUI: FC = () => {
   const aui = useAui();
   const isComposer = aui.attachment.source !== "message";
@@ -144,28 +185,31 @@ const AttachmentUI: FC = () => {
 
   return (
     <Tooltip>
-      <AttachmentPrimitive.Root
-        className={cn(
-          "aui-attachment-root relative",
-          isImage &&
-            !isComposer &&
-            "aui-attachment-root-message only:*:first:size-24",
-        )}
-      >
-        <AttachmentPreviewDialog>
-          <TooltipTrigger asChild>
-            <div
-              className="aui-attachment-tile bg-muted size-14 cursor-pointer overflow-hidden rounded-md border transition-opacity hover:opacity-75"
-              role="button"
-              tabIndex={0}
-              aria-label={`${typeLabel} attachment`}
-            >
-              <AttachmentThumb />
-            </div>
-          </TooltipTrigger>
-        </AttachmentPreviewDialog>
-        {isComposer && <AttachmentRemove />}
-      </AttachmentPrimitive.Root>
+      <div className="flex flex-col">
+        <AttachmentPrimitive.Root
+          className={cn(
+            "aui-attachment-root relative",
+            isImage &&
+              !isComposer &&
+              "aui-attachment-root-message only:*:first:size-24",
+          )}
+        >
+          <AttachmentPreviewDialog>
+            <TooltipTrigger asChild>
+              <div
+                className="aui-attachment-tile bg-muted size-14 cursor-pointer overflow-hidden rounded-md border transition-opacity hover:opacity-75"
+                role="button"
+                tabIndex={0}
+                aria-label={`${typeLabel} attachment`}
+              >
+                <AttachmentThumb />
+              </div>
+            </TooltipTrigger>
+          </AttachmentPreviewDialog>
+          {isComposer && <AttachmentRemove />}
+        </AttachmentPrimitive.Root>
+        {isComposer && !isImage && <DocumentTextPreview />}
+      </div>
       <TooltipContent side="top">
         <AttachmentPrimitive.Name />
       </TooltipContent>
