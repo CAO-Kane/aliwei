@@ -1,6 +1,11 @@
 "use client";
 
-import { AssistantRuntimeProvider, useAuiState, useThreadRuntime } from "@assistant-ui/react";
+import {
+  AssistantRuntimeProvider,
+  useAuiState,
+  useThreadRuntime,
+  type PendingAttachment,
+} from "@assistant-ui/react";
 import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai";
 import { Thread } from "@aliwei/ui/assistant-ui/thread";
@@ -21,7 +26,7 @@ import { ThreadListSidebar } from "@/client/components/threadlist-sidebar";
 import { AskUserToolUI } from "@aliwei/ui/assistant-ui/ask-user-tool";
 import { SuggestAgentToolUI } from "@/client/components/suggest-agent-tool";
 import { apiFetch, apiUrl } from "@/client/lib/api";
-import { useCallback, useContext, useEffect, useRef, useState, type FC } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type FC } from "react";
 
 // Reads the last user message text from the messages array.
 function getLastUserText(messages: UIMessage[]): string {
@@ -141,6 +146,49 @@ function ChatView({
   autoSendText,
   onMessagesChanged,
 }: ChatViewProps) {
+  const docCountRef = useRef(0);
+
+  const attachmentAdapter = useMemo(
+    () => ({
+      accept: "application/pdf,.docx,.doc",
+      async add({ file }: { file: File }) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await apiFetch("/parse-document", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(err.error ?? "文档解析失败，请检查文件");
+        }
+        const { text } = (await res.json()) as { text: string };
+        const n = ++docCountRef.current;
+        const baseName = file.name.replace(/\.[^.]+$/, "");
+        return {
+          id: crypto.randomUUID(),
+          type: "document" as const,
+          name: file.name,
+          contentType: file.type,
+          file,
+          status: { type: "requires-action" as const, reason: "composer-send" as const },
+          content: [{ type: "text" as const, text: `【文档${n}: ${baseName}】\n${text}` }],
+        };
+      },
+      async send(attachment: PendingAttachment) {
+        return {
+          ...attachment,
+          content: attachment.content ?? [],
+          status: { type: "complete" as const },
+        };
+      },
+      async remove() {
+        // nothing to clean up server-side
+      },
+    }),
+    [],
+  );
+
   const runtime = useChatRuntime({
     messages: initialMessages,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
@@ -152,6 +200,9 @@ function ChatView({
         agentId: activeAgent?.id ?? null,
       },
     }),
+    adapters: {
+      attachments: attachmentAdapter,
+    },
   });
 
   const stableOnMessagesChanged = useCallback(
