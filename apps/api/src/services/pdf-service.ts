@@ -1,6 +1,6 @@
 import mammoth from "mammoth";
 import WordExtractor from "word-extractor";
-import * as pdfjsLib from "pdfjs-dist";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { createCanvas } from "@napi-rs/canvas";
 import { generateText } from "ai";
 import { writeFile, unlink } from "node:fs/promises";
