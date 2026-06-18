@@ -1,6 +1,6 @@
-import { JARGON_DICT, formatDictForPrompt } from "@aliwei/domain/jargon-dict";
+import { formatJargonForPrompt, getAllJargon } from "@aliwei/db";
 
-const DICT_TEXT = formatDictForPrompt(JARGON_DICT);
+const DICT_TEXT = formatJargonForPrompt(getAllJargon());
 
 export function buildSystemPrompt(agentPrompt: string): string {
   return `你是「阿里职场 AI 助手」，专为阿里系员工设计的智能助理。
