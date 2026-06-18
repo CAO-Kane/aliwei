@@ -48,7 +48,7 @@ apps/dingtalk ──► (将来按需挑,跟 api 走同一套 HTTP 协议)
 ```bash
 pnpm install
 
-cp apps/api/.env.example apps/api/.env            # 填 ALIBABA_API_KEY
+cp apps/api/.env.example apps/api/.env            # 填 ALIBABA_API_KEY、QWEN_VL_MODEL_NAME（文档解析用视觉模型）
 cp apps/web/.env.example apps/web/.env.local      # 默认指向 http://localhost:3001
 
 pnpm dev                                          # 并发跑 web (3000) + api (3001)
