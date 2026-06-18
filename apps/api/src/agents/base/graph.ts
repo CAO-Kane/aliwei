@@ -6,7 +6,6 @@ import { BaseState } from "./state";
 import { shouldContinue, makeCallModelNode } from "./nodes";
 import { getCheckpointer } from "./checkpointer";
 import { askUserTool } from "../shared/tools";
-import { jargonLookupTool } from "../shared/jargon-lookup-tool";
 
 export type CreateBaseGraphOpts<A extends typeof BaseState> = {
   agentId: string;
@@ -17,7 +16,7 @@ export type CreateBaseGraphOpts<A extends typeof BaseState> = {
 };
 
 export function createBaseGraph<A extends typeof BaseState>(opts: CreateBaseGraphOpts<A>) {
-  const allTools: StructuredToolInterface[] = [askUserTool, jargonLookupTool, ...(opts.extraTools ?? [])];
+  const allTools: StructuredToolInterface[] = [askUserTool, ...(opts.extraTools ?? [])];
   const toolNode = new ToolNode(allTools as any);
 
   if (typeof opts.model.bindTools !== "function") {

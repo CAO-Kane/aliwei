@@ -4,6 +4,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { createBaseGraph } from "../base/graph";
 import { BaseState } from "../base/state";
 import { WEEKLY_TOOL_PROMPT, buildSystemPrompt } from "../shared/prompts";
+import { jargonLookupTool } from "../shared/jargon-lookup-tool";
 import { streamGraphToUIMessageStream } from "../shared/stream-adapter";
 
 export function createWeeklyGraph(model: BaseChatModel): CompiledStateGraph<any, any, any> {
@@ -11,6 +12,7 @@ export function createWeeklyGraph(model: BaseChatModel): CompiledStateGraph<any,
     agentId: "weekly",
     stateAnnotation: BaseState,
     systemPromptFn: () => buildSystemPrompt(WEEKLY_TOOL_PROMPT),
+    extraTools: [jargonLookupTool],
     model,
   }) as any;
 }

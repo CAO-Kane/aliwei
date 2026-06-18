@@ -5,7 +5,6 @@ import { BaseState } from "../state";
 import { createBaseGraph } from "../graph";
 import { resetCheckpointer } from "../checkpointer";
 import { askUserTool } from "../../shared/tools";
-import { jargonLookupTool } from "../../shared/jargon-lookup-tool";
 import * as fs from "node:fs";
 
 const TEST_DB = "/tmp/aliwei-test-graph.db";
@@ -82,7 +81,6 @@ describe("createBaseGraph", () => {
     const boundTools = bindSpy.mock.calls[0][0] as any[];
     const names = boundTools.map((t) => t.name);
     expect(names).toContain(askUserTool.name);
-    expect(names).toContain(jargonLookupTool.name);
     expect(names).toContain("extra_tool");
   });
 });
