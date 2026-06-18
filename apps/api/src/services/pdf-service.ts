@@ -56,7 +56,8 @@ async function pdfToImages(buffer: Buffer): Promise<string[]> {
 
 async function extractPdf(buffer: Buffer): Promise<string> {
   const images = await pdfToImages(buffer);
-  const model = getLlmClient()(
+  // Use .chat() to force Chat Completions endpoint — DashScope does not support Responses API
+  const model = getLlmClient().chat(
     process.env.QWEN_VL_MODEL_NAME ?? "qwen-vl-max",
   );
   const { text } = await generateText({
