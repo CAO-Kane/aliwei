@@ -144,7 +144,10 @@ const DocumentTextPreview: FC = () => {
 
   return (
     <div className="mt-1 max-w-56 rounded-md border bg-muted/50 p-2 text-xs text-muted-foreground">
-      <p className="whitespace-pre-wrap break-words">
+      <p className={cn(
+        "whitespace-pre-wrap break-words overflow-y-auto",
+        expanded ? "max-h-40" : "max-h-16",
+      )}>
         {expanded ? full : preview}
         {!expanded && hasMore && "…"}
       </p>
