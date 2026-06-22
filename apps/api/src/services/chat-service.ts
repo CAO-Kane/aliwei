@@ -1,7 +1,6 @@
 import type { UIMessage } from "ai";
 import { createThread, getThread, insertMessage, touchThread } from "@aliwei/db";
 import { HumanMessage } from "@langchain/core/messages";
-import { Command } from "@langchain/langgraph";
 import { getChatModel } from "@/agents/base/model";
 import { createJargonGraph, jargonStreamChat } from "@/agents/jargon/graph";
 import { createWeeklyGraph, weeklyStreamChat } from "@/agents/weekly/graph";
@@ -9,6 +8,7 @@ import { createOkrGraph, okrStreamChat } from "@/agents/okr/graph";
 import { createReviewGraph, reviewStreamChat } from "@/agents/review/graph";
 import { createStartGraph, startStreamChat } from "@/agents/start/graph";
 import { streamGraphToUIMessageStream } from "@/agents/shared/stream-adapter";
+import { decideResume } from "@/agents/shared/resume-policy";
 
 type ChatRequest = {
   messages: UIMessage[];
@@ -31,107 +31,6 @@ function extractText(message: UIMessage): string {
 export function lastUserText(messages: UIMessage[]): string {
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   return lastUser ? extractText(lastUser) : "";
-}
-
-// Returns the text content of the last step in the last assistant message.
-// Used as skipPrefix when resuming after ask_user: Qwen echoes the AIMessage
-// content from the final LLM step (the step that called ask_user) when it
-// resumes, so we strip that prefix from its new response.
-function getLastAssistantText(messages: UIMessage[]): string {
-  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
-  if (!lastAssistant) return "";
-  const parts = lastAssistant.parts as Array<{ type?: string; text?: string }>;
-  // Find start of the last step so we only extract text from that step.
-  // Earlier steps correspond to prior LangGraph LLM invocations whose
-  // AIMessage content Qwen does NOT re-echo.
-  let lastStepIdx = 0;
-  for (let i = 0; i < parts.length; i++) {
-    if (parts[i].type === "step-start") lastStepIdx = i;
-  }
-  return parts
-    .slice(lastStepIdx)
-    .filter(
-      (p): p is { type: "text"; text: string } => p.type === "text" && typeof p.text === "string",
-    )
-    .map((p) => p.text)
-    .join("");
-}
-
-// Detects "this request is a resume of an interrupted ask_user tool" by
-// finding an assistant message whose final tool part is a completed
-// ask_user invocation (output-available) that hasn't been answered by a
-// later user turn AND hasn't already been consumed by the LLM in this
-// same assistant message.
-//
-// "Already consumed" means: after the tool-ask_user output-available part
-// there is a later text part or another tool part — i.e. the LLM already
-// saw the tool result and produced a response. Re-sending Command.resume
-// in that case re-injects the same result, the LLM re-generates the same
-// text, and the client loops indefinitely.
-export function detectAskUserResume(messages: UIMessage[]): string | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    if (m.role === "user") return null;
-    if (m.role !== "assistant") continue;
-    // Walk parts left-to-right so we can detect "tool followed by anything
-    // else" — meaning the LLM has consumed it. Return the answer only if
-    // ask_user output is the actual last semantically meaningful part.
-    let askUserAnswer: string | null = null;
-    let consumed = false;
-    for (let j = 0; j < m.parts.length; j++) {
-      const p = m.parts[j] as { type?: string; state?: string; output?: unknown };
-      if (p.type === "tool-ask_user" && p.state === "output-available") {
-        const out = p.output as { selected?: string } | undefined;
-        if (typeof out?.selected === "string") {
-          askUserAnswer = out.selected;
-          consumed = false;
-        }
-      } else if (askUserAnswer !== null && isContentfulPart(p)) {
-        // Anything content-bearing after the ask_user tool result means
-        // the LLM already used it. Mark consumed.
-        consumed = true;
-      }
-    }
-    return consumed ? null : askUserAnswer;
-  }
-  return null;
-}
-
-export function detectSuggestAgentResume(messages: UIMessage[]): boolean | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    if (m.role === "user") return null;
-    if (m.role !== "assistant") continue;
-    let suggestAnswer: boolean | null = null;
-    let consumed = false;
-    for (let j = 0; j < m.parts.length; j++) {
-      const p = m.parts[j] as { type?: string; state?: string; output?: unknown };
-      if (p.type === "tool-suggest_agent" && p.state === "output-available") {
-        const out = p.output as { confirmed?: boolean } | undefined;
-        if (typeof out?.confirmed === "boolean") {
-          suggestAnswer = out.confirmed;
-          consumed = false;
-        }
-      } else if (suggestAnswer !== null && isContentfulPart(p)) {
-        consumed = true;
-      }
-    }
-    return consumed ? null : suggestAnswer;
-  }
-  return null;
-}
-
-// True if a part contributes content the LLM may have generated AFTER
-// consuming an ask_user tool result. step-start is a structural marker
-// (not content) so it does not count.
-function isContentfulPart(p: { type?: string; state?: string }): boolean {
-  if (!p.type) return false;
-  if (p.type === "step-start") return false;
-  if (p.type === "text") return true;
-  if (p.type === "reasoning") return true;
-  // Any other tool call (not the original ask_user) means the LLM moved on.
-  if (p.type.startsWith("tool-") || p.type === "dynamic-tool") return true;
-  return false;
 }
 
 type Streamer = (opts: {
@@ -196,18 +95,15 @@ export async function streamChat(req: ChatRequest) {
 
   // Resume branch: user just answered an ask_user or suggest_agent interrupt.
   // Feed the answer back into the paused graph instead of starting a new turn.
-  const resumeAnswer = detectAskUserResume(req.messages);
-  const suggestAgentAnswer = detectSuggestAgentResume(req.messages);
-  const resumeValue: string | boolean | null = resumeAnswer ?? suggestAgentAnswer;
+  const decision = await decideResume(graph, currentThreadId, agentId);
 
-  if (resumeValue !== null) {
-    const skipPrefix = getLastAssistantText(req.messages);
+  if (decision.kind === "resume") {
     const response = await streamGraphToUIMessageStream(
       graph,
-      new Command({ resume: resumeValue }),
+      decision.command,
       currentThreadId,
       onFinish,
-      { isResume: true, skipPrefix },
+      { isResume: true, skipPrefix: decision.skipPrefix },
     );
     touchThread(currentThreadId);
     return response;
