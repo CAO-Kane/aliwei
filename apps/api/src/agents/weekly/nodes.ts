@@ -1,4 +1,4 @@
-import { AIMessage, SystemMessage, ToolMessage } from "@langchain/core/messages";
+import { SystemMessage } from "@langchain/core/messages";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { getAllJargon } from "@aliwei/db";
 import { askUserTool } from "../shared/tools";
@@ -18,27 +18,15 @@ export function makeCollectInfoNode(model: BaseChatModel) {
 
 export function makeAskStyleNode() {
   return async (_state: WeeklyStateShape): Promise<Partial<WeeklyStateShape>> => {
-    const toolCallId = crypto.randomUUID();
     const toolArgs: { question: string; options: string[] } = {
       question: "你希望周报使用哪种风格？",
       options: ["🔥 高度黑话", "✅ 适度黑话", "🌿 去黑话"],
     };
 
-    const aiMsg = new AIMessage({
-      content: "",
-      tool_calls: [{ id: toolCallId, name: "ask_user", args: toolArgs, type: "tool_call" }],
-    });
-
     const result = await askUserTool.invoke(toolArgs);
     const { selected } = JSON.parse(result as string);
 
-    return {
-      messages: [
-        aiMsg,
-        new ToolMessage({ content: result as string, tool_call_id: toolCallId, name: "ask_user" }),
-      ],
-      stylePreference: selected,
-    };
+    return { stylePreference: selected };
   };
 }
 
@@ -63,7 +51,14 @@ export function makeSelectCandidatesNode(model: BaseChatModel) {
 
 export function makeVerifySlangNode() {
   return async (state: WeeklyStateShape): Promise<Partial<WeeklyStateShape>> => {
-    const terms = state.candidateTerms
+    // Qwen frequently wraps term lists in code fences or prefixes them with
+    // "以下是词：" despite "只输出词名、不要解释" instructions. Strip both
+    // before splitting so a single fenced block doesn't get looked up as one
+    // opaque non-term.
+    const cleaned = state.candidateTerms
+      .replace(/```[a-z]*\n?|```/g, "")
+      .replace(/^(以下是)?(候选)?(词|词表)[:：]\s*/m, "");
+    const terms = cleaned
       .split(/[、,，]/)
       .map((s) => s.trim())
       .filter(Boolean);

@@ -102,6 +102,29 @@ describe("weekly graph", () => {
     expect(result.verifiedEntries).toBe("");
   });
 
+  it("strips code fences and prefixes from select_candidates output", async () => {
+    const fake = new FakeListChatModel({
+      responses: [
+        new AIMessage("本周工作：完成项目A需求评审") as any,
+        new AIMessage("```\n对齐、拉通\n```") as any,
+        new AIMessage("## 本周工作\n完成对齐。") as any,
+      ],
+    });
+
+    const graph = createWeeklyGraph(fake as any);
+    const result = (await graph.invoke(
+      {
+        messages: [new HumanMessage("本周完成了项目A的需求评审")],
+        threadId: "t-fence",
+        agentId: "weekly",
+      } as any,
+      { configurable: { thread_id: "t-fence" } },
+    )) as any;
+
+    expect(result.verifiedEntries).toContain("对齐");
+    expect(result.verifiedEntries).not.toContain("```");
+  });
+
   it("weeklyStreamChat returns a Response with text/event-stream", async () => {
     const fake = new FakeListChatModel({
       responses: [
