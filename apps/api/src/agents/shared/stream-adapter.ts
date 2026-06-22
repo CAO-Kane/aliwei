@@ -86,7 +86,6 @@ export async function streamGraphToUIMessageStream(
   const adapter = deps?.modelAdapter ?? getModelAdapter();
   const messageId = crypto.randomUUID();
   let textId = crypto.randomUUID();
-  let finishedNormally = true;
   const skipPrefix = options?.skipPrefix ?? "";
   // Streaming path: buffer text until we can determine whether it starts with
   // the skip prefix. Once determined, either discard the prefix chars and emit
@@ -224,10 +223,8 @@ export async function streamGraphToUIMessageStream(
                 toolName: name,
                 input: interruptValue,
               } as any);
-              finishedNormally = false;
             } else {
               // Non-interrupt tool error — propagate as a normal stream error.
-              finishedNormally = false;
               throw event.data?.error;
             }
           }
@@ -236,10 +233,8 @@ export async function streamGraphToUIMessageStream(
         // Defensive: some langgraph versions DO throw GraphInterrupt out of
         // streamEvents instead of yielding on_tool_error. Handle that path too.
         if (!looksLikeGraphInterrupt(err)) {
-          finishedNormally = false;
           throw err;
         }
-        finishedNormally = false;
       } finally {
         // Flush streaming prefix buffer if the model finished before we
         // accumulated enough chars to determine a match.
@@ -266,9 +261,6 @@ export async function streamGraphToUIMessageStream(
           sm.noteFinishStep();
         }
         sm.noteClosed();
-        // finishedNormally is no longer used to gate finish-step; keep the
-        // local so future error handling (logging, metrics) can still see it.
-        void finishedNormally;
       }
     },
     onError: (err) => {
