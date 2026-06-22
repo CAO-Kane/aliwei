@@ -1,32 +1,12 @@
 import type { CompiledStateGraph } from "@langchain/langgraph";
 import { Command, isGraphInterrupt } from "@langchain/langgraph";
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
+import { getModelAdapter } from "@/agents/base/model";
+import type { ModelAdapter } from "./model-adapter";
 
 export { Command };
 
 type OnFinish = (text: string) => void | Promise<void>;
-
-// Qwen / Aliyun OpenAI-compat models sometimes emit tool_call args as
-// `{ input: "<JSON string>" }` rather than the schema-shaped object. LangChain
-// tool wrappers parse it transparently on the way in, but the on_tool_start
-// event still carries the wrapped shape. Unwrap for client display.
-function unwrapToolInput(raw: unknown): unknown {
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    const keys = Object.keys(raw as object);
-    if (keys.length === 1 && keys[0] === "input") {
-      const inner = (raw as Record<string, unknown>).input;
-      if (typeof inner === "string") {
-        try {
-          return JSON.parse(inner);
-        } catch {
-          return raw;
-        }
-      }
-      return inner;
-    }
-  }
-  return raw;
-}
 
 // Stronger predicate than @langchain/langgraph's isGraphInterrupt: also
 // catches duck-typed instances that survive class identity loss (e.g.
@@ -100,7 +80,9 @@ export async function streamGraphToUIMessageStream(
   threadId: string,
   onFinish?: OnFinish,
   options?: { isResume?: boolean; skipPrefix?: string },
+  deps?: { modelAdapter?: ModelAdapter },
 ): Promise<Response> {
+  const adapter = deps?.modelAdapter ?? getModelAdapter();
   const messageId = crypto.randomUUID();
   let textId = crypto.randomUUID();
   let textOpen = false;
@@ -192,7 +174,7 @@ export async function streamGraphToUIMessageStream(
             // events). If we received no stream chunks for this turn, pull
             // the final text out of the end event and emit it once.
             if (!textOpen) {
-              let finalText = extractFinalText(event.data);
+              let finalText = adapter.extractFinalTextFromEndEvent(event.data);
               if (skipPrefix && finalText.startsWith(skipPrefix)) {
                 finalText = finalText.slice(skipPrefix.length);
               }
@@ -215,7 +197,7 @@ export async function streamGraphToUIMessageStream(
               type: "tool-input-available",
               toolCallId: id,
               toolName: name,
-              input: unwrapToolInput(event.data?.input),
+              input: adapter.unwrapToolInput(event.data?.input),
             } as any);
             inputSent.add(id);
           } else if (event.event === "on_tool_end") {
@@ -326,28 +308,6 @@ function extractTextDeltas(content: unknown): string[] {
     return out;
   }
   return [];
-}
-
-// Pull the final text from on_chat_model_end event data. Used when a
-// provider returned the full response without streaming (no
-// on_chat_model_stream chunks fired). The payload shape varies a bit
-// between LangChain versions, so check the common locations.
-function extractFinalText(data: any): string {
-  if (!data) return "";
-  // langchain core puts the AIMessage on data.output (or data.output.generations[0][0].message)
-  const candidates: unknown[] = [
-    data.output?.content,
-    data.output?.text,
-    data.output?.generations?.[0]?.[0]?.message?.content,
-    data.output?.generations?.[0]?.[0]?.text,
-    data.message?.content,
-    data.text,
-  ];
-  for (const c of candidates) {
-    const deltas = extractTextDeltas(c);
-    if (deltas.length > 0) return deltas.join("");
-  }
-  return "";
 }
 
 function messageToText(message: UIMessage | undefined): string {
