@@ -1,6 +1,12 @@
 import type { ModelAdapter } from "./model-adapter";
 
 export class QwenAdapter implements ModelAdapter {
+  /**
+   * Only unwraps when the input has exactly one key named 'input'. If Qwen
+   * ever emits a wrapped object with additional fields, this method will
+   * pass it through unchanged (callers must then handle the wrapped shape
+   * themselves or this will need to be widened).
+   */
   unwrapToolInput(raw: unknown): unknown {
     if (raw && typeof raw === "object" && !Array.isArray(raw)) {
       const keys = Object.keys(raw as object);

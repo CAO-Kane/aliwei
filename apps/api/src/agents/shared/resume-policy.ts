@@ -98,6 +98,17 @@ function parseToolOutput(content: unknown): string | boolean | null {
   return null;
 }
 
+/**
+ * Returns the full text content of the last AIMessage in langgraph state,
+ * not just the text from the last step. This matches what Qwen echoes when
+ * resuming after ask_user/suggest_agent: the LLM re-emits the AIMessage
+ * that called the tool, whose full content equals the final step's
+ * content in the typical case.
+ *
+ * If Qwen's resume behavior ever changes to echo only the last step,
+ * this should be updated to walk parts from the last step-start marker
+ * (matching the prior chat-service.ts getLastAssistantText behavior).
+ */
 function extractLastAssistantText(snapshot: any): string {
   const messages = Array.isArray(snapshot.values?.messages) ? snapshot.values.messages : [];
   for (let i = messages.length - 1; i >= 0; i--) {
