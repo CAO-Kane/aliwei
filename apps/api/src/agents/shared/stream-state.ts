@@ -11,9 +11,7 @@ export type StreamPhase =
   | { kind: "idle" }
   | { kind: "llm_step" }
   | { kind: "llm_text_open" }
-  | { kind: "tool_replay" }
   | { kind: "tool_fresh" }
-  | { kind: "finishing" }
   | { kind: "closed" };
 
 export class StreamStateMachine {
@@ -73,11 +71,11 @@ export class StreamStateMachine {
   }
 
   noteToolStart(): void {
-    this._phase = { kind: this._skipToolEvents ? "tool_replay" : "tool_fresh" };
+    this._phase = { kind: "tool_fresh" };
   }
 
   noteToolEnd(): void {
-    // phase stays tool_fresh/tool_replay until next chat_model_start
+    // phase stays tool_fresh until next chat_model_start
   }
 
   markInputSent(toolCallId: string): void {
@@ -96,10 +94,6 @@ export class StreamStateMachine {
     const buf = this._prefixBuffer;
     this._prefixBuffer = "";
     return buf;
-  }
-
-  noteFinishing(): void {
-    this._phase = { kind: "finishing" };
   }
 
   noteClosed(): void {
